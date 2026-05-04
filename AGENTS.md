@@ -38,6 +38,18 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
+- This backend is an API-only modular monolith for a Next.js frontend. Do not introduce server-rendered module UIs unless explicitly requested.
+- The intended module system is `nwidart/laravel-modules` when dependencies are approved. Use it for module structure, lifecycle, generators, and module discovery; do not treat it as a microservices framework or as a substitute for domain boundaries.
+- ERP modules should be organized by business capability, such as `Identity`, `Organization`, `Inventory`, `Finance`, `POS`, and `Accounting`.
+- `Identity` and `Organization` are core modules. User, company, branch, role, permission, SSO identity mapping, and module entitlement concerns belong there unless a stronger existing convention says otherwise.
+- Keep modules loosely coupled. One module must not freely reach into another module's internal models, tables, or services. Prefer explicit contracts, application services, actions, events, or API resources for cross-module interactions.
+- Every business module must expose API routes with versioning conventions, such as `/api/v1/inventory/...`, unless existing project conventions require another pattern.
+- Maintain a module registry endpoint for the frontend to list installed and enabled modules. The registry response must be permission-aware and cacheable.
+- Use centralized SSO for authentication. Do not implement separate login flows per module. Modules should receive an authenticated user context and enforce module permissions/entitlements.
+- Use granular permissions scoped by module, such as `inventory.view`, `finance.approve-payment`, and `accounting.post-journal`.
+- Design for multi-company ERP data from the start. Business tables should consider `company_id`, and when relevant `branch_id`, `created_by`, and `updated_by`.
+- Preserve performance when adding modular features: avoid filesystem scanning during normal requests, keep module metadata cacheable, support `route:cache`, `config:cache`, optimized Composer autoloading, pagination, indexes, eager loading, queues for heavy work, and API Resources for responses.
+- Do not add module scaffolding, install `nwidart/laravel-modules`, or change Composer dependencies without explicit user approval.
 
 ## Frontend Bundling
 
