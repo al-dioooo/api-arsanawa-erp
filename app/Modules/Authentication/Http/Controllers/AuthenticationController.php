@@ -4,6 +4,7 @@ namespace App\Modules\Authentication\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Authentication\Actions\AuthenticateUser;
+use App\Modules\Authentication\Actions\RefreshAccessToken;
 use App\Modules\Authentication\Actions\ResetUserPassword;
 use App\Modules\Authentication\Actions\RevokeAccessToken;
 use App\Modules\Authentication\Actions\SendPasswordResetLink;
@@ -20,11 +21,15 @@ class AuthenticationController extends Controller
     {
         $result = $action->execute($request->validated());
 
-        return $this->success([
-            'token_type' => 'Bearer',
-            'access_token' => $result['plainTextToken'],
-            'user' => new AuthenticatedUserResource($result['user']),
-        ], __('Login successful.'));
+        return $this->success(
+            [
+                'token_type' => 'Bearer',
+                'access_token' => $result['plainTextToken'],
+                'expires_at' => $result['accessToken']->expires_at?->toISOString(),
+                'user' => new AuthenticatedUserResource($result['user']),
+            ],
+            __('Login successful.'),
+        );
     }
 
     public function me(Request $request): JsonResponse
@@ -40,6 +45,21 @@ class AuthenticationController extends Controller
         $action->execute($request->user());
 
         return $this->success(message: __('Logged out.'));
+    }
+
+    public function refresh(Request $request, RefreshAccessToken $action): JsonResponse
+    {
+        $result = $action->execute($request->user());
+
+        return $this->success(
+            [
+                'token_type' => 'Bearer',
+                'access_token' => $result['plainTextToken'],
+                'expires_at' => $result['accessToken']->expires_at?->toISOString(),
+                'user' => new AuthenticatedUserResource($result['user']),
+            ],
+            __('Token refreshed.'),
+        );
     }
 
     public function forgotPassword(ForgotPasswordRequest $request, SendPasswordResetLink $action): JsonResponse

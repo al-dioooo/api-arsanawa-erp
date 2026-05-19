@@ -115,19 +115,44 @@ Examples:
 
 ## Current Implementation Notes
 
-- Authentication has been started under `app/Modules/Authentication`.
+- Authentication, Identity, and Organization are implemented under `app/Modules`.
 - `routes/api.php` is enabled in `bootstrap/app.php`.
-- A custom `auth:api` bearer-token guard is registered via `Auth::viaRequest`.
+- A custom `auth:api` bearer-token guard is registered via `Auth::extend` and
+  `Authentication\Guards\AccessTokenGuard`.
 - `auth_access_tokens` stores hashed access tokens.
 - `users.username` supports username-based login.
 - Forgot/reset password uses Laravel's built-in password broker.
+- `GET /api/v1/modules` is Organization-backed and reads company module entitlements.
 - SMTP will be configured later; current mail behavior depends on environment mail configuration.
+
+## Resolved Decisions
+
+- `spatie/laravel-permission ^7.4` chosen for roles/permissions. Guard name is always `api`.
+- Authentication, Identity, and Organization are separate modules (implemented separately).
+- Custom bearer-token guard kept (Sanctum migration deferred).
 
 ## Open Decisions
 
 - Whether to install and migrate to `nwidart/laravel-modules`.
-- Whether to keep the custom bearer-token guard or replace it with Laravel Sanctum.
-- Whether Authentication, Identity, and Organization should be separate modules immediately or split progressively.
 - Exact module registry response schema for the Next.js frontend.
-- Role/permission package choice, if any.
 - SSO/OIDC/SAML strategy for future external identity providers.
+
+---
+
+## Codex Update — 2026-05-19
+
+**Agent:** Codex
+
+- Organization is now implemented under `app/Modules/Organization` using the existing
+  custom module convention, not `nwidart/laravel-modules`.
+- Organization owns `companies`, `branches`, `memberships`, and `module_entitlements`.
+- Spatie teams are enabled; `team_id` is the active company ID and maps to
+  `Organization\Models\Company`.
+- Authenticated routes now run the Organization company-context middleware so permissions
+  are evaluated against the active company membership.
+- `GET /api/v1/modules` is no longer the config stub; it reads company entitlements and
+  filters visibility by permissions.
+- The module-registry entitlement gate decision is resolved for the current backend:
+  module visibility is Organization-backed and company-scoped.
+- Verification by Codex: `vendor/bin/pint --dirty --format agent`; `php artisan test`
+  passed with 44 tests and 188 assertions.

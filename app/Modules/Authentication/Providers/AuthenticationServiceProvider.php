@@ -3,6 +3,7 @@
 namespace App\Modules\Authentication\Providers;
 
 use App\Models\User;
+use App\Modules\Authentication\Guards\AccessTokenGuard;
 use App\Modules\Authentication\Models\AuthAccessToken;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -31,27 +32,42 @@ class AuthenticationServiceProvider extends ServiceProvider
      */
     private function registerAccessTokenGuard(): void
     {
-        Auth::viaRequest('access-token', function (Request $request): ?User {
-            $bearerToken = $request->bearerToken();
+        $resolveUser = fn (Request $request): ?User => $this->resolveUserFromAccessToken($request);
 
-            if (! $bearerToken) {
-                return null;
-            }
+        Auth::extend('access-token', function ($app, string $name, array $config) use ($resolveUser): AccessTokenGuard {
+            $guard = new AccessTokenGuard(
+                $resolveUser,
+                $app['request'],
+                Auth::createUserProvider($config['provider'] ?? null),
+            );
 
-            $accessToken = AuthAccessToken::findValidToken($bearerToken);
+            $app->refresh('request', $guard, 'setRequest');
 
-            if (! $accessToken) {
-                return null;
-            }
-
-            if (! $accessToken->last_used_at || $accessToken->last_used_at->lt(now()->subMinutes(5))) {
-                $accessToken->forceFill(['last_used_at' => now()])->save();
-            }
-
-            $accessToken->user->setCurrentAccessToken($accessToken);
-
-            return $accessToken->user;
+            return $guard;
         });
+    }
+
+    private function resolveUserFromAccessToken(Request $request): ?User
+    {
+        $bearerToken = $request->bearerToken();
+
+        if (! $bearerToken) {
+            return null;
+        }
+
+        $accessToken = AuthAccessToken::findValidToken($bearerToken);
+
+        if (! $accessToken) {
+            return null;
+        }
+
+        if (! $accessToken->last_used_at || $accessToken->last_used_at->lt(now()->subMinutes(5))) {
+            $accessToken->forceFill(['last_used_at' => now()])->save();
+        }
+
+        $accessToken->user->setCurrentAccessToken($accessToken);
+
+        return $accessToken->user;
     }
 
     /**

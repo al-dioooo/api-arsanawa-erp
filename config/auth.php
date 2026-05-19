@@ -119,4 +119,6 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'access_token_lifetime_hours' => (int) env('ACCESS_TOKEN_LIFETIME_HOURS', 24),
+
 ];

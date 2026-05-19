@@ -13,7 +13,7 @@ class AuthenticateUser
      * Verify credentials and issue an access token.
      *
      * @param  array{login: string, password: string, device_name?: string}  $credentials
-     * @return array{user: User, plainTextToken: string}
+     * @return array{user: User, accessToken: AuthAccessToken, plainTextToken: string}
      *
      * @throws ValidationException
      */
@@ -38,8 +38,11 @@ class AuthenticateUser
             name: $credentials['device_name'] ?? 'api',
         );
 
+        $user->setCurrentAccessToken($issued['accessToken']);
+
         return [
             'user' => $user,
+            'accessToken' => $issued['accessToken'],
             'plainTextToken' => $issued['plainTextToken'],
         ];
     }

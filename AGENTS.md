@@ -168,3 +168,21 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+---
+
+## Codex Handoff Addendum — 2026-05-19
+
+**Agent:** Codex
+
+- Organization is implemented in `app/Modules/Organization` using the repo's custom
+  module structure.
+- Spatie teams are enabled. Treat `team_id` as `company_id`; active team context is set
+  by Organization middleware from `X-Company-Id` or the user's first active membership.
+- Direct permission assignment in tests now requires a company context:
+  create an active `memberships` row, call `setPermissionsTeamId($company->id)`, assign
+  the permission, then clear or switch the team context as needed.
+- `GET /api/v1/modules` is Organization-backed. Do not restore `config/modules.php` or
+  the old Authentication module registry stub.
+- Full-suite verification after this update: `php artisan test` passed with 44 tests and
+  188 assertions.
