@@ -2,8 +2,11 @@
 
 use App\Modules\Authentication\Providers\AuthenticationServiceProvider;
 use App\Modules\Identity\Providers\IdentityServiceProvider;
+use App\Modules\Inventory\Providers\InventoryServiceProvider;
 use App\Modules\Organization\Http\Middleware\SetCurrentCompany;
 use App\Modules\Organization\Providers\OrganizationServiceProvider;
+use App\Modules\Partners\Providers\PartnersServiceProvider;
+use App\Modules\Platform\Providers\PlatformServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         AuthenticationServiceProvider::class,
         IdentityServiceProvider::class,
         OrganizationServiceProvider::class,
+        PlatformServiceProvider::class,
+        PartnersServiceProvider::class,
+        InventoryServiceProvider::class,
     ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Organization\Http\Middleware;
 
+use App\Modules\Organization\Models\Branch;
 use App\Modules\Organization\Models\Membership;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -39,7 +40,36 @@ class SetCurrentCompany
         $request->attributes->set('active_company_id', $membership?->company_id);
         $request->attributes->set('active_membership', $membership);
 
+        $branch = $this->resolveBranch($request, $membership?->company_id);
+
+        if ($request->headers->has('X-Branch-Id') && ! $branch) {
+            return new JsonResponse([
+                'message' => __('Branch access denied.'),
+                'data' => null,
+            ], 403);
+        }
+
+        $request->attributes->set('active_branch_id', $branch?->id);
+
         return $next($request);
+    }
+
+    private function resolveBranch(Request $request, ?int $companyId): ?Branch
+    {
+        $requestedBranchId = $request->header('X-Branch-Id');
+
+        if ($requestedBranchId === null) {
+            return null;
+        }
+
+        if ($companyId === null || ! ctype_digit((string) $requestedBranchId)) {
+            return null;
+        }
+
+        return Branch::query()
+            ->where('id', (int) $requestedBranchId)
+            ->where('company_id', $companyId)
+            ->first();
     }
 
     private function resolveMembership(Request $request): ?Membership

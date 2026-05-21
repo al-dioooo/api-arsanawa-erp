@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(CurrencySeeder::class);
+        $this->call(PermissionSeeder::class);
 
         User::factory()->create([
             'name' => 'Alice Evergarden',
@@ -23,5 +24,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'hello@al.is-a.dev',
             'password' => bcrypt('aldio1234'),
         ]);
+
+        $this->call(DemoCompanySeeder::class);
     }
 }

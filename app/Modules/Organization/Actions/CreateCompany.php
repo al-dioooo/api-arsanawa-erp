@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Organization\Models\Branch;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -13,14 +14,6 @@ use Spatie\Permission\Models\Role;
 
 class CreateCompany
 {
-    private const OWNER_PERMISSIONS = [
-        'organization.view',
-        'organization.manage-company',
-        'organization.manage-branches',
-        'organization.manage-members',
-        'organization.manage-entitlements',
-    ];
-
     /**
      * Create a company, its primary branch, and the first owner membership.
      *
@@ -86,14 +79,16 @@ class CreateCompany
         $previousTeamId = getPermissionsTeamId();
 
         try {
-            foreach (self::OWNER_PERMISSIONS as $permission) {
+            $permissions = PermissionCatalog::keys();
+
+            foreach ($permissions as $permission) {
                 Permission::findOrCreate($permission, 'api');
             }
 
             setPermissionsTeamId($company->id);
 
             $role = Role::findOrCreate('company-owner', 'api');
-            $role->givePermissionTo(self::OWNER_PERMISSIONS);
+            $role->givePermissionTo($permissions);
 
             $user->assignRole($role);
         } finally {

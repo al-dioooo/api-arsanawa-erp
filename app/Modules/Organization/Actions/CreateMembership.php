@@ -5,17 +5,12 @@ namespace App\Modules\Organization\Actions;
 use App\Models\User;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Support\PermissionCatalog;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class CreateMembership
 {
-    private const ADMIN_PERMISSIONS = [
-        'organization.view',
-        'organization.manage-branches',
-        'organization.manage-members',
-    ];
-
     /**
      * @param  array{user_id: int, branch_id?: int|null, role?: string}  $data
      */
@@ -47,14 +42,16 @@ class CreateMembership
         $previousTeamId = getPermissionsTeamId();
 
         try {
-            foreach (self::ADMIN_PERMISSIONS as $permission) {
+            $permissions = PermissionCatalog::keysForGroup('organization');
+
+            foreach ($permissions as $permission) {
                 Permission::findOrCreate($permission, 'api');
             }
 
             setPermissionsTeamId($company->id);
 
             $role = Role::findOrCreate('company-admin', 'api');
-            $role->givePermissionTo(self::ADMIN_PERMISSIONS);
+            $role->givePermissionTo($permissions);
 
             $user->assignRole($role);
         } finally {
