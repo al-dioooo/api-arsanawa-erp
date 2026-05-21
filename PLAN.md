@@ -124,18 +124,40 @@ Examples:
 - Forgot/reset password uses Laravel's built-in password broker.
 - `GET /api/v1/modules` is Organization-backed and reads company module entitlements.
 - SMTP will be configured later; current mail behavior depends on environment mail configuration.
+- Phase 0 (Foundation Hardening) is complete: a `Platform` module owns `currencies` and a
+  company/branch-scoped `settings` store (`SettingsManager`); `config/permissions.php` +
+  `App\Support\PermissionCatalog` + `php artisan permission:sync` drive a permission
+  registry; companies manage custom roles via `/organization/companies/{company}/roles`;
+  branch-level role scoping uses the `branch_user` table, the `BranchPermission` service,
+  and the `X-Branch-Id` header resolved by `SetCurrentCompany`.
+- Default data is seeded by `CurrencySeeder`, `PermissionSeeder`, and `DemoCompanySeeder`.
+- Phase 1 (Partners) is complete: the shared `Partners` module owns `partners`,
+  `partner_contacts`, and `partner_addresses` (company-scoped customers/suppliers with
+  contacts and addresses), exposed under `/api/v1/partners` and gated by `partners.*`
+  permissions. Inventory and Finance reference partners through this module.
 
 ## Resolved Decisions
 
 - `spatie/laravel-permission ^7.4` chosen for roles/permissions. Guard name is always `api`.
 - Authentication, Identity, and Organization are separate modules (implemented separately).
 - Custom bearer-token guard kept (Sanctum migration deferred).
+- Product categories are a user-defined free-depth tree, company-scoped — one
+  self-referencing `categories` table, not a hardcoded taxonomy.
+- Discount & Reward are company/branch-scoped and toggled via the Organization
+  entitlement feature flag, not built as standalone modules.
+- A shared `Partners` module owns customers, suppliers, and contacts; Inventory and
+  Finance reference it via contracts.
+- Role assignments will be scoped per branch (not only per company).
+- A Configurations/settings table (company + module scoped) will be added in Phase 0.
+- Build order is the five-phase roadmap in `walkthrough.md` (Foundation → Partners →
+  Inventory → Finance → POS → Bank VA).
 
 ## Open Decisions
 
 - Whether to install and migrate to `nwidart/laravel-modules`.
 - Exact module registry response schema for the Next.js frontend.
 - SSO/OIDC/SAML strategy for future external identity providers.
+- Whether Purchasing (PO) folds into Inventory or becomes a separate Procurement module.
 
 ---
 
