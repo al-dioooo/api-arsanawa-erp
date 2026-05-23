@@ -84,3 +84,40 @@ function createProduct(string $token, int $companyId, array $data): int
         ->postJson('/api/v1/inventory/products', $data)
         ->json('data.product.id');
 }
+
+/**
+ * Create a user, a company they own, and return the auth context.
+ * Identical to inventoryActor but with a Finance-specific company name.
+ *
+ * @return array{0: User, 1: string, 2: int, 3: int}
+ */
+function financeActor(): array
+{
+    $owner = User::factory()->create();
+
+    $token = test()->postJson('/api/v1/auth/login', [
+        'login' => $owner->email,
+        'password' => 'password',
+    ])->json('data.access_token');
+
+    $company = test()->withToken($token)
+        ->postJson('/api/v1/organization/companies', [
+            'name' => 'Finance Co '.uniqid(),
+        ])
+        ->json('data');
+
+    return [$owner, $token, $company['company']['id'], $company['primary_branch']['id']];
+}
+
+/**
+ * Create a chart of accounts entry for the given company.
+ *
+ * @param  array<string, mixed>  $data
+ */
+function createAccount(string $token, int $companyId, array $data): int
+{
+    return test()->withToken($token)
+        ->withHeader('X-Company-Id', (string) $companyId)
+        ->postJson('/api/v1/finance/accounts', $data)
+        ->json('data.account.id');
+}

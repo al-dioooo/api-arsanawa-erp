@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Inventory\Models\ProductBranchAvailability;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -100,7 +101,7 @@ describe('Inventory product variants', function () {
             ])
             ->assertSuccessful();
 
-        expect(\App\Modules\Inventory\Models\ProductBranchAvailability::query()
+        expect(ProductBranchAvailability::query()
             ->where('branch_id', $branchId)
             ->where('product_variant_id', $variantId)
             ->count())->toBe(1);

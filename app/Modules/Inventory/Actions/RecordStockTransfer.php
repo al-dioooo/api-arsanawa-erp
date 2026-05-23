@@ -5,6 +5,7 @@ namespace App\Modules\Inventory\Actions;
 use App\Models\User;
 use App\Modules\Inventory\Models\StockTransfer;
 use App\Modules\Inventory\Services\StockService;
+use Illuminate\Validation\ValidationException;
 
 class RecordStockTransfer
 {
@@ -15,7 +16,7 @@ class RecordStockTransfer
     /**
      * @param  array<string, mixed>  $data
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function execute(int $companyId, User $user, array $data): StockTransfer
     {

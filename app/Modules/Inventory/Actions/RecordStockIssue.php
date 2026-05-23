@@ -4,6 +4,7 @@ namespace App\Modules\Inventory\Actions;
 
 use App\Models\User;
 use App\Modules\Inventory\Services\StockService;
+use Illuminate\Validation\ValidationException;
 
 class RecordStockIssue
 {
@@ -14,7 +15,7 @@ class RecordStockIssue
     /**
      * @param  array<string, mixed>  $data
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function execute(int $companyId, User $user, array $data): void
     {

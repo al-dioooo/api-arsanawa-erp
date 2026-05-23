@@ -61,4 +61,30 @@ return [
         ],
     ],
 
+    'finance' => [
+        'label' => 'Finance',
+        'permissions' => [
+            ['key' => 'finance.view', 'label' => 'View finance data'],
+            ['key' => 'finance.manage-accounts', 'label' => 'Manage chart of accounts'],
+            ['key' => 'finance.manage-journals', 'label' => 'Manage journal entries'],
+            ['key' => 'finance.manage-receivables', 'label' => 'Manage accounts receivable'],
+            ['key' => 'finance.manage-payables', 'label' => 'Manage accounts payable'],
+            ['key' => 'finance.manage-payments', 'label' => 'Manage payments'],
+            ['key' => 'finance.approve', 'label' => 'Approve financial documents'],
+            ['key' => 'finance.manage-tax', 'label' => 'Manage tax returns'],
+        ],
+    ],
+
+    'pos' => [
+        'label' => 'POS',
+        'permissions' => [
+            ['key' => 'pos.view', 'label' => 'View POS data'],
+            ['key' => 'pos.operate', 'label' => 'Operate registers and sales'],
+            ['key' => 'pos.manage-registers', 'label' => 'Manage POS registers'],
+            ['key' => 'pos.manage-orders', 'label' => 'Manage catering orders'],
+            ['key' => 'pos.void-sales', 'label' => 'Void POS sales'],
+            ['key' => 'pos.view-reports', 'label' => 'View POS reports'],
+        ],
+    ],
+
 ];

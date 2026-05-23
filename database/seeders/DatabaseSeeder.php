@@ -26,5 +26,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(DemoCompanySeeder::class);
+        $this->call(InventoryDemoSeeder::class);
+        $this->call(FinanceDemoSeeder::class);
+        $this->call(PosDemoSeeder::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Inventory\Models;
 
+use App\Modules\Organization\Models\Branch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,11 +35,11 @@ class StockTransfer extends Model
 
     public function fromBranch(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Organization\Models\Branch::class, 'from_branch_id');
+        return $this->belongsTo(Branch::class, 'from_branch_id');
     }
 
     public function toBranch(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Organization\Models\Branch::class, 'to_branch_id');
+        return $this->belongsTo(Branch::class, 'to_branch_id');
     }
 }

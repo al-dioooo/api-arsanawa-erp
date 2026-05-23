@@ -135,6 +135,12 @@ Examples:
   `partner_contacts`, and `partner_addresses` (company-scoped customers/suppliers with
   contacts and addresses), exposed under `/api/v1/partners` and gated by `partners.*`
   permissions. Inventory and Finance reference partners through this module.
+- Phase 4 (POS) is complete: `app/Modules/Pos` owns registers, cashier shifts, sales,
+  sale lines, split-tender payments, applied promotions, catering confirmation,
+  completion/void integration, and sales/shift reports. Completion consumes Inventory
+  FIFO stock through `StockService` and posts balanced revenue and COGS journals through
+  Finance `PostingService`. `PosDemoSeeder` seeds the SEKALORI demo register and the
+  `cogs` / `inventory_asset` account mappings.
 
 ## Resolved Decisions
 
