@@ -1,58 +1,208 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Arsanawa ERP API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API-only Laravel backend for Arsanawa ERP, a modular multi-company ERP platform. This
+service owns authentication, company context, module entitlements, permissions, and the
+business APIs consumed by the web console and future module frontends.
 
-## About Laravel
+## What is included
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Custom bearer-token authentication through `auth:api`
+- Company and branch context on authenticated requests
+- Spatie permissions using the `api` guard
+- Module entitlement registry per company
+- Current backend modules:
+  - Authentication
+  - Identity
+  - Organization
+  - Platform
+  - Partners
+  - Inventory
+  - Finance
+  - POS
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.3+
+- Composer
+- Node.js and npm, for Laravel asset tooling only
+- PostgreSQL
 
-## Learning Laravel
+The exact framework and package versions are pinned in `composer.json` and
+`package.json`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Configure `.env` for your local database before running migrations:
 
-## Contributing
+```dotenv
+APP_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=arsanawa_erp
+DB_USERNAME=postgres
+DB_PASSWORD=
+```
 
-## Code of Conduct
+## Running locally
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan serve
+```
 
-## Security Vulnerabilities
+The API is served at:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```text
+http://localhost:8000/api/v1
+```
 
-## License
+The combined Laravel development script is also available:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer run dev
+```
+
+That starts the HTTP server, queue listener, log tailing, and Vite process defined in
+`composer.json`.
+
+## Tests
+
+Run the full backend test suite before finishing any API change:
+
+```bash
+php artisan test
+```
+
+Useful focused commands:
+
+```bash
+php artisan test tests/Feature/AuthenticationApiTest.php
+php artisan test --filter="token expiry"
+```
+
+This project uses Pest feature tests. New behavior should be covered by a failing test
+before implementation.
+
+## Authentication
+
+Login accepts either email or username in the `login` field:
+
+```http
+POST /api/v1/auth/login
+Accept: application/json
+Content-Type: application/json
+```
+
+```json
+{
+  "login": "admin@example.com",
+  "password": "password",
+  "device_name": "Local browser"
+}
+```
+
+Authenticated requests use:
+
+```http
+Authorization: Bearer {token}
+X-Company-Id: {company_id}
+X-Branch-Id: {branch_id}
+Accept: application/json
+```
+
+`X-Company-Id` is required once the user belongs to more than one company or when a
+company-scoped endpoint needs an explicit context. `X-Branch-Id` is used by branch-scoped
+operations.
+
+## Response shape
+
+Successful API responses use the shared envelope:
+
+```json
+{
+  "message": "Human-readable message.",
+  "data": {}
+}
+```
+
+Validation errors use Laravel's default validation shape:
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {}
+}
+```
+
+## Route groups
+
+All API routes are prefixed with `/api/v1`.
+
+| Area | Prefix | Notes |
+| --- | --- | --- |
+| Authentication | `/auth` | Login, password reset, current user, logout, refresh |
+| Identity | `/identity` | Profile and user identity reads |
+| Organization | `/organization` | Companies, branches, memberships, roles, entitlements |
+| Platform | `/platform` | Settings and currencies |
+| Partners | `/partners` | Customers, suppliers, contacts, addresses |
+| Inventory | `/inventory` | Catalogue, stock, pricing, discounts, rewards |
+| Finance | `/finance` | Accounts, periods, tax, journals, invoices, bills, payments, reports |
+| POS | `/pos` | Registers, shifts, sales, payments, promotions, reports |
+
+Use `php artisan route:list --path=api/v1` for the source-of-truth route list.
+
+## Architecture
+
+Modules live under `app/Modules/{ModuleName}` and follow this structure:
+
+```text
+app/Modules/{Module}/
+|-- Actions/
+|-- Http/
+|   |-- Controllers/
+|   |-- Requests/
+|   `-- Resources/
+|-- Models/
+|-- Providers/
+`-- database/
+    `-- migrations/
+```
+
+Controllers stay thin. Business operations belong in action classes with one public
+`execute(...)` method. Request validation belongs in FormRequest classes. API response
+transforms belong in JsonResource classes.
+
+Modules must not import another module's models directly. Use actions, events, or API
+resources for cross-module contracts. `app/Models/User.php` is the only shared model
+exception.
+
+## Permissions
+
+Permission names use the `module.action` format, for example:
+
+- `identity.view`
+- `organization.manage-members`
+- `inventory.manage-products`
+- `finance.post-journal`
+- `pos.operate`
+
+All permissions must use `guard_name = api`. Company scoping is implemented through
+Spatie teams with the active team set from request company context.
+
+## Documentation
+
+- `walkthrough.md` in the workspace root tracks architecture, module status, API surface,
+  and recent changes.
+- `routes/api.php` is the authoritative route registration file.
+- Feature tests under `tests/Feature` are the best executable examples of expected API
+  behavior.
