@@ -31,6 +31,7 @@ class PaymentResource extends JsonResource
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'allocations' => PaymentAllocationResource::collection($this->whenLoaded('allocations')),
+            'approval_request' => new ApprovalRequestResource($this->whenLoaded('approvalRequest')),
         ];
     }
 }

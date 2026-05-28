@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Payment extends Model
 {
@@ -70,6 +71,11 @@ class Payment extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'journal_entry_id');
+    }
+
+    public function approvalRequest(): MorphOne
+    {
+        return $this->morphOne(ApprovalRequest::class, 'approvable');
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder

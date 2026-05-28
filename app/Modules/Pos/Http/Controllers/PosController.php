@@ -5,6 +5,7 @@ namespace App\Modules\Pos\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Pos\Actions\AddSalePayment;
 use App\Modules\Pos\Actions\ApplyPromotions;
+use App\Modules\Pos\Actions\CancelSale;
 use App\Modules\Pos\Actions\CloseShift;
 use App\Modules\Pos\Actions\CompleteSale;
 use App\Modules\Pos\Actions\ConfirmOrder;
@@ -24,6 +25,7 @@ use App\Modules\Pos\Actions\UpdateSale;
 use App\Modules\Pos\Actions\VoidSale;
 use App\Modules\Pos\Http\Requests\AddSalePaymentRequest;
 use App\Modules\Pos\Http\Requests\ApplyPromotionsRequest;
+use App\Modules\Pos\Http\Requests\CancelSaleRequest;
 use App\Modules\Pos\Http\Requests\CloseShiftRequest;
 use App\Modules\Pos\Http\Requests\CompleteSaleRequest;
 use App\Modules\Pos\Http\Requests\ConfirmOrderRequest;
@@ -149,6 +151,16 @@ class PosController extends Controller
         return $this->success(
             ['sale' => new SaleResource($voided)],
             __('Sale voided.'),
+        );
+    }
+
+    public function cancelSale(CancelSaleRequest $request, CancelSale $action, int $sale): JsonResponse
+    {
+        $canceled = $action->execute($this->resolveSale($request, $sale), $request->user());
+
+        return $this->success(
+            ['sale' => new SaleResource($canceled)],
+            __('Sale canceled.'),
         );
     }
 

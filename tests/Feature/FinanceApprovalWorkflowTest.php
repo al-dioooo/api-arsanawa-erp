@@ -344,4 +344,86 @@ describe('Finance Document Approval Workflow', function () {
             ->postJson("/api/v1/finance/bills/{$billId}/post")
             ->assertSuccessful();
     });
+
+    it('returns approval request detail and trail on bill and payment resources', function (): void {
+        [$owner, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Supplier Inc',
+            'code' => 'SUP-001',
+            'status' => 'active',
+        ]);
+
+        // Setup matrix rule
+        $approver = User::factory()->create(['name' => 'John Approver']);
+        setPermissionsTeamId($companyId);
+        $approver->assignRole(
+            Role::create([
+                'name' => 'Approver '.$approver->id,
+                'company_id' => $companyId,
+                'guard_name' => 'api',
+            ])->givePermissionTo('finance.approve')
+        );
+        Membership::create([
+            'company_id' => $companyId,
+            'user_id' => $approver->id,
+            'role' => 'manager',
+            'status' => 'active',
+        ]);
+
+        ApprovalMatrix::create([
+            'company_id' => $companyId,
+            'document_type' => 'bill',
+            'min_amount' => '1000.0000',
+            'max_amount' => '5000.0000',
+            'level' => 1,
+            'approver_user_id' => $approver->id,
+        ]);
+
+        // Create bill
+        $billId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/finance/bills', [
+                'partner_id' => $partner->id,
+                'bill_date' => '2026-05-22',
+                'due_date' => '2026-06-22',
+                'lines' => [['description' => 'Consulting', 'quantity' => '1.0000', 'unit_price' => '2000.0000']],
+            ])->json('data.bill.id');
+
+        // Submit for approval
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/finance/bills/{$billId}/submit-approval")
+            ->assertSuccessful();
+
+        // Get details of bill - verify approval_request is present
+        $response = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/finance/bills/{$billId}")
+            ->assertSuccessful();
+
+        $response->assertJsonPath('data.bill.approval_request.status', 'pending')
+            ->assertJsonPath('data.bill.approval_request.current_level', 1);
+
+        // Approve it and verify trail
+        $request = ApprovalRequest::where('approvable_id', $billId)->first();
+        $approverToken = test()->postJson('/api/v1/auth/login', [
+            'login' => $approver->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withToken($approverToken)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/finance/approval-requests/{$request->id}/act", [
+                'action' => 'approved',
+                'remark' => 'Approved by John',
+            ])->assertSuccessful();
+
+        // Get details again - verify approval_request status and actions trail
+        $response = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/finance/bills/{$billId}")
+            ->assertSuccessful();
+
+        $response->assertJsonPath('data.bill.approval_request.status', 'approved')
+            ->assertJsonPath('data.bill.approval_request.actions.0.remark', 'Approved by John')
+            ->assertJsonPath('data.bill.approval_request.actions.0.user.name', 'John Approver');
+    });
 });

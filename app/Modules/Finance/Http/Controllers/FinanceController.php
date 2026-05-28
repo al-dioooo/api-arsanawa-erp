@@ -533,7 +533,7 @@ class FinanceController extends Controller
         $bill = $this->resolveBill($request, $id);
 
         return $this->success(
-            ['bill' => new BillResource($bill->load('lines'))],
+            ['bill' => new BillResource($bill->load(['lines', 'approvalRequest.actions.user']))],
             __('Bill retrieved.'),
         );
     }
@@ -616,7 +616,7 @@ class FinanceController extends Controller
         $payment = $this->resolvePayment($request, $id);
 
         return $this->success(
-            ['payment' => new PaymentResource($payment->load('allocations'))],
+            ['payment' => new PaymentResource($payment->load(['allocations', 'approvalRequest.actions.user']))],
             __('Payment retrieved.'),
         );
     }

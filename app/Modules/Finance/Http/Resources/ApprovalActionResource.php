@@ -14,6 +14,12 @@ class ApprovalActionResource extends JsonResource
             'approval_request_id' => $this->approval_request_id,
             'level' => $this->level,
             'user_id' => $this->user_id,
+            'user' => $this->whenLoaded('user', fn () => [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+                'username' => $this->user->username,
+                'email' => $this->user->email,
+            ]),
             'action' => $this->action,
             'remark' => $this->remark,
             'acted_at' => $this->acted_at?->toIso8601String(),

@@ -1,0 +1,5412 @@
+openapi: 3.0.3
+info:
+  title: 'Arsanawa ERP API'
+  version: 1.0.0
+  description: 'OpenAPI contract for importing the Laravel API into OWASP ZAP and other API clients. Mutating request bodies are intentionally permissive where module-specific payloads are complex; Laravel FormRequests remain the source of validation truth.'
+servers:
+  -
+    url: 'https://api-arsanawa-erp.test'
+    description: 'Local Herd HTTPS'
+paths:
+  /api/v1/auth/forgot-password:
+    post:
+      operationId: auth_forgot_password
+      tags:
+        - Auth
+      summary: api.v1.auth.forgot-password
+      parameters: {  }
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login
+      tags:
+        - Auth
+      summary: api.v1.auth.login
+      parameters: {  }
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout
+      tags:
+        - Auth
+      summary: api.v1.auth.logout
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/auth/me:
+    get:
+      operationId: auth_me
+      tags:
+        - Auth
+      summary: api.v1.auth.me
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/auth/refresh:
+    post:
+      operationId: auth_refresh
+      tags:
+        - Auth
+      summary: api.v1.auth.refresh
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/auth/reset-password:
+    post:
+      operationId: auth_reset_password
+      tags:
+        - Auth
+      summary: api.v1.auth.reset-password
+      parameters: {  }
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/account-mappings:
+    get:
+      operationId: finance_account_mappings_index
+      tags:
+        - Finance
+      summary: api.v1.finance.account-mappings.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    put:
+      operationId: finance_account_mappings_upsert
+      tags:
+        - Finance
+      summary: api.v1.finance.account-mappings.upsert
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/accounts:
+    get:
+      operationId: finance_accounts_index
+      tags:
+        - Finance
+      summary: api.v1.finance.accounts.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_accounts_store
+      tags:
+        - Finance
+      summary: api.v1.finance.accounts.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/accounts/{account}':
+    get:
+      operationId: finance_accounts_show
+      tags:
+        - Finance
+      summary: api.v1.finance.accounts.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: account
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: finance_accounts_update
+      tags:
+        - Finance
+      summary: api.v1.finance.accounts.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: account
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: finance_accounts_destroy
+      tags:
+        - Finance
+      summary: api.v1.finance.accounts.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: account
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/finance/approval-matrices:
+    get:
+      operationId: finance_approval_matrices_index
+      tags:
+        - Finance
+      summary: api.v1.finance.approval-matrices.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_approval_matrices_store
+      tags:
+        - Finance
+      summary: api.v1.finance.approval-matrices.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/approval-matrices/{approvalMatrix}':
+    patch:
+      operationId: finance_approval_matrices_update
+      tags:
+        - Finance
+      summary: api.v1.finance.approval-matrices.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: approvalMatrix
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: finance_approval_matrices_destroy
+      tags:
+        - Finance
+      summary: api.v1.finance.approval-matrices.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: approvalMatrix
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/finance/approval-requests:
+    get:
+      operationId: finance_approval_requests_index
+      tags:
+        - Finance
+      summary: api.v1.finance.approval-requests.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/finance/approval-requests/{approvalRequest}/act':
+    post:
+      operationId: finance_approval_requests_act
+      tags:
+        - Finance
+      summary: api.v1.finance.approval-requests.act
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: approvalRequest
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/bills:
+    get:
+      operationId: finance_bills_index
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_bills_store
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/bills/{bill}':
+    get:
+      operationId: finance_bills_show
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: bill
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: finance_bills_update
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: bill
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/bills/{bill}/post':
+    post:
+      operationId: finance_bills_post
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.post
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: bill
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/bills/{bill}/submit-approval':
+    post:
+      operationId: finance_bills_submit_approval
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.submit-approval
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: bill
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/bills/{bill}/void':
+    post:
+      operationId: finance_bills_void
+      tags:
+        - Finance
+      summary: api.v1.finance.bills.void
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: bill
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/invoices:
+    get:
+      operationId: finance_invoices_index
+      tags:
+        - Finance
+      summary: api.v1.finance.invoices.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_invoices_store
+      tags:
+        - Finance
+      summary: api.v1.finance.invoices.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/invoices/{invoice}':
+    get:
+      operationId: finance_invoices_show
+      tags:
+        - Finance
+      summary: api.v1.finance.invoices.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: invoice
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: finance_invoices_update
+      tags:
+        - Finance
+      summary: api.v1.finance.invoices.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: invoice
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/invoices/{invoice}/post':
+    post:
+      operationId: finance_invoices_post
+      tags:
+        - Finance
+      summary: api.v1.finance.invoices.post
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: invoice
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/invoices/{invoice}/void':
+    post:
+      operationId: finance_invoices_void
+      tags:
+        - Finance
+      summary: api.v1.finance.invoices.void
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: invoice
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/journal-entries:
+    get:
+      operationId: finance_journal_entries_index
+      tags:
+        - Finance
+      summary: api.v1.finance.journal-entries.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_journal_entries_store
+      tags:
+        - Finance
+      summary: api.v1.finance.journal-entries.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/journal-entries/{journalEntry}':
+    get:
+      operationId: finance_journal_entries_show
+      tags:
+        - Finance
+      summary: api.v1.finance.journal-entries.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: journalEntry
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/finance/journal-entries/{journalEntry}/post':
+    post:
+      operationId: finance_journal_entries_post
+      tags:
+        - Finance
+      summary: api.v1.finance.journal-entries.post
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: journalEntry
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/journal-entries/{journalEntry}/void':
+    post:
+      operationId: finance_journal_entries_void
+      tags:
+        - Finance
+      summary: api.v1.finance.journal-entries.void
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: journalEntry
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/payments:
+    get:
+      operationId: finance_payments_index
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_payments_store
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/payments/{payment}':
+    get:
+      operationId: finance_payments_show
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: payment
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: finance_payments_update
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: payment
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/payments/{payment}/post':
+    post:
+      operationId: finance_payments_post
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.post
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: payment
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/payments/{payment}/submit-approval':
+    post:
+      operationId: finance_payments_submit_approval
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.submit-approval
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: payment
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/payments/{payment}/void':
+    post:
+      operationId: finance_payments_void
+      tags:
+        - Finance
+      summary: api.v1.finance.payments.void
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: payment
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/periods:
+    get:
+      operationId: finance_periods_index
+      tags:
+        - Finance
+      summary: api.v1.finance.periods.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_periods_store
+      tags:
+        - Finance
+      summary: api.v1.finance.periods.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/periods/{period}/close':
+    post:
+      operationId: finance_periods_close
+      tags:
+        - Finance
+      summary: api.v1.finance.periods.close
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: period
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/periods/{period}/reopen':
+    post:
+      operationId: finance_periods_reopen
+      tags:
+        - Finance
+      summary: api.v1.finance.periods.reopen
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: period
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/finance/reports/account-ledger:
+    get:
+      operationId: finance_reports_account_ledger
+      tags:
+        - Finance
+      summary: api.v1.finance.reports.account-ledger
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/finance/reports/trial-balance:
+    get:
+      operationId: finance_reports_trial_balance
+      tags:
+        - Finance
+      summary: api.v1.finance.reports.trial-balance
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/finance/tax-rates:
+    get:
+      operationId: finance_tax_rates_index
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-rates.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_tax_rates_store
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-rates.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/tax-rates/{taxRate}':
+    get:
+      operationId: finance_tax_rates_show
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-rates.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: taxRate
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: finance_tax_rates_update
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-rates.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: taxRate
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: finance_tax_rates_destroy
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-rates.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: taxRate
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/finance/tax-returns:
+    get:
+      operationId: finance_tax_returns_index
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-returns.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: finance_tax_returns_store
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-returns.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/finance/tax-returns/{taxReturn}':
+    get:
+      operationId: finance_tax_returns_show
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-returns.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: taxReturn
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    delete:
+      operationId: finance_tax_returns_destroy
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-returns.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: taxReturn
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/finance/tax-returns/{taxReturn}/finalize':
+    post:
+      operationId: finance_tax_returns_finalize
+      tags:
+        - Finance
+      summary: api.v1.finance.tax-returns.finalize
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: taxReturn
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/identity/profile:
+    get:
+      operationId: identity_profile_show
+      tags:
+        - Identity
+      summary: api.v1.identity.profile.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: identity_profile_update
+      tags:
+        - Identity
+      summary: api.v1.identity.profile.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/identity/users/{id}':
+    get:
+      operationId: identity_users_show
+      tags:
+        - Identity
+      summary: api.v1.identity.users.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/brands:
+    get:
+      operationId: inventory_brands_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.brands.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_brands_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.brands.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/brands/{brand}':
+    get:
+      operationId: inventory_brands_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.brands.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: brand
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: inventory_brands_update
+      tags:
+        - Inventory
+      summary: api.v1.inventory.brands.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: brand
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: inventory_brands_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.brands.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: brand
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/categories:
+    get:
+      operationId: inventory_categories_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.categories.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_categories_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.categories.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/categories/{category}':
+    get:
+      operationId: inventory_categories_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.categories.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: category
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: inventory_categories_update
+      tags:
+        - Inventory
+      summary: api.v1.inventory.categories.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: category
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: inventory_categories_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.categories.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: category
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/inventory/categories/{category}/move':
+    post:
+      operationId: inventory_categories_move
+      tags:
+        - Inventory
+      summary: api.v1.inventory.categories.move
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: category
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/inventory/discounts:
+    get:
+      operationId: inventory_discounts_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.discounts.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_discounts_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.discounts.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/discounts/{discount}':
+    get:
+      operationId: inventory_discounts_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.discounts.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: discount
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    delete:
+      operationId: inventory_discounts_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.discounts.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: discount
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/price-lists:
+    get:
+      operationId: inventory_price_lists_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.price-lists.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_price_lists_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.price-lists.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/price-lists/{priceList}/prices':
+    put:
+      operationId: inventory_price_lists_prices_set
+      tags:
+        - Inventory
+      summary: api.v1.inventory.price-lists.prices.set
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: priceList
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/inventory/products:
+    get:
+      operationId: inventory_products_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_products_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/products/{product}':
+    get:
+      operationId: inventory_products_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: inventory_products_update
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: inventory_products_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/inventory/products/{product}/tags':
+    put:
+      operationId: inventory_products_tags_sync
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.tags.sync
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/products/{product}/variants':
+    post:
+      operationId: inventory_products_variants_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.variants.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/products/{product}/variants/{variant}':
+    patch:
+      operationId: inventory_products_variants_update
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.variants.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: inventory_products_variants_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.variants.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/inventory/products/{product}/variants/{variant}/availability':
+    put:
+      operationId: inventory_products_variants_availability_update
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.variants.availability.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/products/{product}/variants/{variant}/price':
+    get:
+      operationId: inventory_products_variants_price_resolve
+      tags:
+        - Inventory
+      summary: api.v1.inventory.products.variants.price.resolve
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/rewards:
+    get:
+      operationId: inventory_rewards_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.rewards.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_rewards_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.rewards.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/rewards/{reward}':
+    delete:
+      operationId: inventory_rewards_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.rewards.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: reward
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/stock/adjustments:
+    post:
+      operationId: inventory_stock_adjustments_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.adjustments.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/inventory/stock/issues:
+    post:
+      operationId: inventory_stock_issues_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.issues.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/inventory/stock/levels:
+    get:
+      operationId: inventory_stock_levels_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.levels.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/stock/lots:
+    get:
+      operationId: inventory_stock_lots_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.lots.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/stock/movements:
+    get:
+      operationId: inventory_stock_movements_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.movements.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/stock/receipts:
+    post:
+      operationId: inventory_stock_receipts_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.receipts.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/inventory/stock/transfers:
+    post:
+      operationId: inventory_stock_transfers_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.transfers.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/inventory/stock/valuation:
+    get:
+      operationId: inventory_stock_valuation_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.valuation.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/units-of-measure:
+    get:
+      operationId: inventory_units_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.units.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: inventory_units_store
+      tags:
+        - Inventory
+      summary: api.v1.inventory.units.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/inventory/units-of-measure/{unit}':
+    get:
+      operationId: inventory_units_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.units.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: unit
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: inventory_units_update
+      tags:
+        - Inventory
+      summary: api.v1.inventory.units.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: unit
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: inventory_units_destroy
+      tags:
+        - Inventory
+      summary: api.v1.inventory.units.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: unit
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/modules:
+    get:
+      operationId: modules_index
+      tags:
+        - Modules
+      summary: api.v1.modules.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/organization/companies:
+    get:
+      operationId: organization_companies_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: organization_companies_store
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/organization/companies/{company}/branches':
+    get:
+      operationId: organization_companies_branches_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.branches.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: organization_companies_branches_store
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.branches.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/organization/companies/{company}/branches/{branch}/assignments':
+    get:
+      operationId: organization_companies_branches_assignments_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.branches.assignments.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: branch
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: organization_companies_branches_assignments_store
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.branches.assignments.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: branch
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/organization/companies/{company}/branches/{branch}/assignments/{user}':
+    delete:
+      operationId: organization_companies_branches_assignments_destroy
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.branches.assignments.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: branch
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: user
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/organization/companies/{company}/entitlements':
+    get:
+      operationId: organization_companies_entitlements_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.entitlements.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    put:
+      operationId: organization_companies_entitlements_update
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.entitlements.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/organization/companies/{company}/memberships':
+    get:
+      operationId: organization_companies_memberships_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.memberships.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: organization_companies_memberships_store
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.memberships.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/organization/companies/{company}/roles':
+    get:
+      operationId: organization_companies_roles_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.roles.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: organization_companies_roles_store
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.roles.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/organization/companies/{company}/roles/{role}':
+    get:
+      operationId: organization_companies_roles_show
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.roles.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: role
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    put:
+      operationId: organization_companies_roles_update
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.roles.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: role
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: organization_companies_roles_destroy
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.roles.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: role
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/organization/context:
+    get:
+      operationId: organization_context_show
+      tags:
+        - Organization
+      summary: api.v1.organization.context.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/organization/permissions:
+    get:
+      operationId: organization_permissions_index
+      tags:
+        - Organization
+      summary: api.v1.organization.permissions.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/partners:
+    get:
+      operationId: partners_index
+      tags:
+        - Partners
+      summary: api.v1.partners.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: partners_store
+      tags:
+        - Partners
+      summary: api.v1.partners.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/partners/{partner}':
+    get:
+      operationId: partners_show
+      tags:
+        - Partners
+      summary: api.v1.partners.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: partners_update
+      tags:
+        - Partners
+      summary: api.v1.partners.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: partners_destroy
+      tags:
+        - Partners
+      summary: api.v1.partners.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/partners/{partner}/addresses':
+    post:
+      operationId: partners_addresses_store
+      tags:
+        - Partners
+      summary: api.v1.partners.addresses.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/partners/{partner}/addresses/{address}':
+    patch:
+      operationId: partners_addresses_update
+      tags:
+        - Partners
+      summary: api.v1.partners.addresses.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: address
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: partners_addresses_destroy
+      tags:
+        - Partners
+      summary: api.v1.partners.addresses.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: address
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/partners/{partner}/contacts':
+    post:
+      operationId: partners_contacts_store
+      tags:
+        - Partners
+      summary: api.v1.partners.contacts.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/partners/{partner}/contacts/{contact}':
+    patch:
+      operationId: partners_contacts_update
+      tags:
+        - Partners
+      summary: api.v1.partners.contacts.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: contact
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: partners_contacts_destroy
+      tags:
+        - Partners
+      summary: api.v1.partners.contacts.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: partner
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: contact
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/platform/currencies:
+    get:
+      operationId: platform_currencies_index
+      tags:
+        - Platform
+      summary: api.v1.platform.currencies.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/platform/settings:
+    get:
+      operationId: platform_settings_index
+      tags:
+        - Platform
+      summary: api.v1.platform.settings.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    put:
+      operationId: platform_settings_update
+      tags:
+        - Platform
+      summary: api.v1.platform.settings.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/pos/registers:
+    get:
+      operationId: pos_registers_index
+      tags:
+        - Pos
+      summary: api.v1.pos.registers.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: pos_registers_store
+      tags:
+        - Pos
+      summary: api.v1.pos.registers.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/registers/{register}':
+    get:
+      operationId: pos_registers_show
+      tags:
+        - Pos
+      summary: api.v1.pos.registers.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: register
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: pos_registers_update
+      tags:
+        - Pos
+      summary: api.v1.pos.registers.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: register
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      operationId: pos_registers_destroy
+      tags:
+        - Pos
+      summary: api.v1.pos.registers.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: register
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/pos/reports/sales:
+    get:
+      operationId: pos_reports_sales
+      tags:
+        - Pos
+      summary: api.v1.pos.reports.sales
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/pos/reports/shifts/{shift}':
+    get:
+      operationId: pos_reports_shifts_show
+      tags:
+        - Pos
+      summary: api.v1.pos.reports.shifts.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: shift
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/pos/sales:
+    get:
+      operationId: pos_sales_index
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: pos_sales_store
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}':
+    get:
+      operationId: pos_sales_show
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    patch:
+      operationId: pos_sales_update
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}/apply-promotions':
+    post:
+      operationId: pos_sales_apply_promotions
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.apply-promotions
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}/complete':
+    post:
+      operationId: pos_sales_complete
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.complete
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}/cancel':
+    post:
+      operationId: pos_sales_cancel
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.cancel
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}/confirm':
+    post:
+      operationId: pos_sales_confirm
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.confirm
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}/payments':
+    post:
+      operationId: pos_sales_payments_store
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.payments.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/sales/{sale}/payments/{payment}':
+    delete:
+      operationId: pos_sales_payments_destroy
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.payments.destroy
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: payment
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/pos/sales/{sale}/void':
+    post:
+      operationId: pos_sales_void
+      tags:
+        - Pos
+      summary: api.v1.pos.sales.void
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: sale
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /api/v1/pos/shifts:
+    get:
+      operationId: pos_shifts_index
+      tags:
+        - Pos
+      summary: api.v1.pos.shifts.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/pos/shifts/current:
+    get:
+      operationId: pos_shifts_current
+      tags:
+        - Pos
+      summary: api.v1.pos.shifts.current
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/pos/shifts/open:
+    post:
+      operationId: pos_shifts_open
+      tags:
+        - Pos
+      summary: api.v1.pos.shifts.open
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  '/api/v1/pos/shifts/{shift}/close':
+    post:
+      operationId: pos_shifts_close
+      tags:
+        - Pos
+      summary: api.v1.pos.shifts.close
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: shift
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: 'Opaque access token'
+  parameters:
+    AcceptHeader:
+      name: Accept
+      in: header
+      required: true
+      schema:
+        type: string
+        default: application/json
+      description: 'Request JSON responses from the API.'
+    CompanyIdHeader:
+      name: X-Company-Id
+      in: header
+      required: false
+      schema:
+        type: integer
+        example: 1
+      description: 'Active company context for tenant-scoped endpoints.'
+  schemas:
+    ApiEnvelope:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          nullable: true
+    ValidationError:
+      type: object
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  responses:
+    Success:
+      description: 'Successful API response.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+    Unauthenticated:
+      description: 'Missing, invalid, or expired bearer token.'
+    Forbidden:
+      description: 'Authenticated user lacks permission or company context.'
+    NotFound:
+      description: 'Resource not found.'
+    ValidationError:
+      description: 'Validation failed.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'

@@ -258,6 +258,7 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::post('sales/{sale}/apply-promotions', [PosController::class, 'applyPromotions'])->name('sales.apply-promotions');
         Route::post('sales/{sale}/confirm', [PosController::class, 'confirmOrder'])->name('sales.confirm');
         Route::post('sales/{sale}/complete', [PosController::class, 'completeSale'])->name('sales.complete');
+        Route::post('sales/{sale}/cancel', [PosController::class, 'cancelSale'])->name('sales.cancel');
         Route::post('sales/{sale}/void', [PosController::class, 'voidSale'])->name('sales.void');
         Route::post('sales/{sale}/payments', [PosController::class, 'addSalePayment'])->name('sales.payments.store');
         Route::delete('sales/{sale}/payments/{payment}', [PosController::class, 'removeSalePayment'])->name('sales.payments.destroy');

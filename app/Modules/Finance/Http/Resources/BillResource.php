@@ -36,6 +36,7 @@ class BillResource extends JsonResource
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'lines' => BillLineResource::collection($this->whenLoaded('lines')),
+            'approval_request' => new ApprovalRequestResource($this->whenLoaded('approvalRequest')),
         ];
     }
 }
