@@ -3,11 +3,13 @@
 use App\Modules\Authentication\Http\Controllers\AuthenticationController;
 use App\Modules\Finance\Http\Controllers\FinanceController;
 use App\Modules\Identity\Http\Controllers\IdentityController;
+use App\Modules\Inventory\Http\Controllers\ExternalProductController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
 use App\Modules\Organization\Http\Controllers\ModuleRegistryController;
 use App\Modules\Organization\Http\Controllers\OrganizationController;
 use App\Modules\Partners\Http\Controllers\PartnersController;
 use App\Modules\Platform\Http\Controllers\PlatformController;
+use App\Modules\Pos\Http\Controllers\ExternalCateringOrderController;
 use App\Modules\Pos\Http\Controllers\PosController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +64,11 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::post('companies/{company}/memberships', [OrganizationController::class, 'storeMembership'])->name('companies.memberships.store');
         Route::get('companies/{company}/entitlements', [OrganizationController::class, 'entitlements'])->name('companies.entitlements.index');
         Route::put('companies/{company}/entitlements', [OrganizationController::class, 'updateEntitlements'])->name('companies.entitlements.update');
+        Route::get('companies/{company}/api-keys', [OrganizationController::class, 'apiKeys'])->name('companies.api-keys.index');
+        Route::post('companies/{company}/api-keys', [OrganizationController::class, 'storeApiKey'])->name('companies.api-keys.store');
+        Route::get('companies/{company}/api-keys/{apiKey}', [OrganizationController::class, 'showApiKey'])->name('companies.api-keys.show');
+        Route::post('companies/{company}/api-keys/{apiKey}/rotate', [OrganizationController::class, 'rotateApiKey'])->name('companies.api-keys.rotate');
+        Route::post('companies/{company}/api-keys/{apiKey}/revoke', [OrganizationController::class, 'revokeApiKey'])->name('companies.api-keys.revoke');
 
         Route::get('permissions', [OrganizationController::class, 'permissions'])->name('permissions.index');
         Route::get('companies/{company}/roles', [OrganizationController::class, 'roles'])->name('companies.roles.index');
@@ -73,6 +80,17 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::get('companies/{company}/branches/{branch}/assignments', [OrganizationController::class, 'branchAssignments'])->name('companies.branches.assignments.index');
         Route::post('companies/{company}/branches/{branch}/assignments', [OrganizationController::class, 'storeBranchAssignment'])->name('companies.branches.assignments.store');
         Route::delete('companies/{company}/branches/{branch}/assignments/{user}', [OrganizationController::class, 'destroyBranchAssignment'])->name('companies.branches.assignments.destroy');
+    });
+
+Route::middleware(['external.api-key', 'throttle:external-api'])
+    ->prefix('v1/external')
+    ->name('api.v1.external.')
+    ->group(function (): void {
+        Route::get('products', [ExternalProductController::class, 'index'])->name('products.index');
+        Route::get('products/{variant}/price', [ExternalProductController::class, 'price'])->name('products.price');
+        Route::post('catering-orders', [ExternalCateringOrderController::class, 'store'])->name('catering-orders.store');
+        Route::get('catering-orders/{externalReference}', [ExternalCateringOrderController::class, 'show'])->name('catering-orders.show');
+        Route::patch('catering-orders/{externalReference}/status', [ExternalCateringOrderController::class, 'updateStatus'])->name('catering-orders.status.update');
     });
 
 Route::middleware(['auth:api', 'organization.company-context'])

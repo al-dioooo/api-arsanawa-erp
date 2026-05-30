@@ -3,7 +3,9 @@
 namespace App\Modules\Organization\Http\Middleware;
 
 use App\Modules\Organization\Models\Branch;
+use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Modules\Organization\Services\DeveloperAccess;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SetCurrentCompany
 {
+    public function __construct(private readonly DeveloperAccess $developerAccess) {}
+
     /**
      * Set Spatie's active team id from the authenticated user's company context.
      *
@@ -27,20 +31,23 @@ class SetCurrentCompany
         }
 
         $membership = $this->resolveMembership($request);
+        $developerCompanyId = $membership ? null : $this->resolveDeveloperCompanyId($request);
 
-        if ($request->headers->has('X-Company-Id') && ! $membership) {
+        if ($request->headers->has('X-Company-Id') && ! $membership && ! $developerCompanyId) {
             return new JsonResponse([
                 'message' => __('Company access denied.'),
                 'data' => null,
             ], 403);
         }
 
-        setPermissionsTeamId($membership?->company_id);
+        $activeCompanyId = $membership?->company_id ?? $developerCompanyId;
 
-        $request->attributes->set('active_company_id', $membership?->company_id);
+        setPermissionsTeamId($activeCompanyId);
+
+        $request->attributes->set('active_company_id', $activeCompanyId);
         $request->attributes->set('active_membership', $membership);
 
-        $branch = $this->resolveBranch($request, $membership?->company_id);
+        $branch = $this->resolveBranch($request, $activeCompanyId);
 
         if ($request->headers->has('X-Branch-Id') && ! $branch) {
             return new JsonResponse([
@@ -94,5 +101,23 @@ class SetCurrentCompany
             ->whereHas('company', fn ($query) => $query->where('status', 'active'))
             ->orderBy('id')
             ->first();
+    }
+
+    private function resolveDeveloperCompanyId(Request $request): ?int
+    {
+        $requestedCompanyId = $request->header('X-Company-Id');
+
+        if ($requestedCompanyId === null || ! ctype_digit((string) $requestedCompanyId)) {
+            return null;
+        }
+
+        if (! $this->developerAccess->userIsDeveloper($request->user())) {
+            return null;
+        }
+
+        return Company::query()
+            ->whereKey((int) $requestedCompanyId)
+            ->where('status', 'active')
+            ->value('id');
     }
 }

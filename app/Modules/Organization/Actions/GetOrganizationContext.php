@@ -7,10 +7,13 @@ use App\Modules\Organization\Models\Branch;
 use App\Modules\Organization\Models\BranchAssignment;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Modules\Organization\Services\DeveloperAccess;
 use Illuminate\Database\Eloquent\Collection;
 
 class GetOrganizationContext
 {
+    public function __construct(private readonly DeveloperAccess $developerAccess) {}
+
     /**
      * Return the user's active company context.
      *
@@ -41,7 +44,13 @@ class GetOrganizationContext
             ->where('status', 'active')
             ->first();
 
-        if (! $membership) {
+        if (! $membership && ! $this->developerAccess->userIsDeveloper($user)) {
+            return $empty;
+        }
+
+        $company = $membership?->company ?? Company::query()->whereKey($companyId)->where('status', 'active')->first();
+
+        if (! $company) {
             return $empty;
         }
 
@@ -59,7 +68,7 @@ class GetOrganizationContext
             ->get();
 
         return [
-            'company' => $membership->company,
+            'company' => $company,
             'membership' => $membership,
             'branches' => $branches,
             'branch_assignments' => $branchAssignments,

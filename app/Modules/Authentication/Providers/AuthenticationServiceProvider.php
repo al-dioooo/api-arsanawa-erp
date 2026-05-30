@@ -107,5 +107,9 @@ class AuthenticationServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset', function (Request $request) {
             return Limit::perMinute(3)->by($request->ip().'|'.$request->string('email'));
         });
+
+        RateLimiter::for('external-api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->header('X-API-Key') ?: $request->ip());
+        });
     }
 }

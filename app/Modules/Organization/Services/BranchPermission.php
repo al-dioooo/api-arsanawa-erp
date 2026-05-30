@@ -8,6 +8,8 @@ use App\Modules\Organization\Models\BranchAssignment;
 
 class BranchPermission
 {
+    public function __construct(private readonly DeveloperAccess $developerAccess) {}
+
     /**
      * Per-request memo of resolved checks.
      *
@@ -32,6 +34,10 @@ class BranchPermission
 
         if ($branch === null) {
             return false;
+        }
+
+        if ($this->developerAccess->userIsDeveloper($user)) {
+            return true;
         }
 
         if ($this->hasCompanyWideGrant($user, $permission, $branch->company_id)) {

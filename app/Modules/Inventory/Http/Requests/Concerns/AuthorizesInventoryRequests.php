@@ -3,6 +3,7 @@
 namespace App\Modules\Inventory\Http\Requests\Concerns;
 
 use App\Modules\Organization\Services\BranchPermission;
+use App\Modules\Organization\Services\DeveloperAccess;
 
 trait AuthorizesInventoryRequests
 {
@@ -29,6 +30,10 @@ trait AuthorizesInventoryRequests
         }
 
         setPermissionsTeamId($companyId);
+
+        if (app(DeveloperAccess::class)->userIsDeveloper($this->user())) {
+            return true;
+        }
 
         return $this->user()?->can($permission) ?? false;
     }

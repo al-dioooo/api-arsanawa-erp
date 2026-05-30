@@ -4075,6 +4075,197 @@ paths:
       security:
         -
           bearerAuth: {  }
+  '/api/v1/organization/companies/{company}/api-keys':
+    get:
+      operationId: organization_companies_api_keys_index
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.api-keys.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+    post:
+      operationId: organization_companies_api_keys_store
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.api-keys.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        201:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - source_channel
+              properties:
+                name:
+                  type: string
+                source_channel:
+                  type: string
+                  example: Landing Page
+                expires_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+  '/api/v1/organization/companies/{company}/api-keys/{apiKey}':
+    get:
+      operationId: organization_companies_api_keys_show
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.api-keys.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+        -
+          name: apiKey
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/organization/companies/{company}/api-keys/{apiKey}/rotate':
+    post:
+      operationId: organization_companies_api_keys_rotate
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.api-keys.rotate
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+        -
+          name: apiKey
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/organization/companies/{company}/api-keys/{apiKey}/revoke':
+    post:
+      operationId: organization_companies_api_keys_revoke
+      tags:
+        - Organization
+      summary: api.v1.organization.companies.api-keys.revoke
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: company
+          in: path
+          required: true
+          schema:
+            type: integer
+        -
+          name: apiKey
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/organization/context:
     get:
       operationId: organization_context_show
@@ -5343,12 +5534,231 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/external/products:
+    get:
+      operationId: external_products_index
+      tags:
+        - External
+      summary: api.v1.external.products.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/ApiKeyHeader'
+        -
+          name: branch_id
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          apiKeyAuth: {  }
+  '/api/v1/external/products/{variant}/price':
+    get:
+      operationId: external_products_price
+      tags:
+        - External
+      summary: api.v1.external.products.price
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/ApiKeyHeader'
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+        -
+          name: 'on'
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          apiKeyAuth: {  }
+  /api/v1/external/catering-orders:
+    post:
+      operationId: external_catering_orders_store
+      tags:
+        - External
+      summary: api.v1.external.catering-orders.store
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/ApiKeyHeader'
+      responses:
+        200:
+          description: 'Existing idempotent order returned.'
+        201:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          apiKeyAuth: {  }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - external_reference
+                - branch_id
+                - customer
+                - fulfilment_date
+                - lines
+              properties:
+                external_reference:
+                  type: string
+                  description: 'Opaque landing-page order reference, unique per company and source channel.'
+                branch_id:
+                  type: integer
+                customer:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                    email:
+                      type: string
+                      nullable: true
+                    phone:
+                      type: string
+                      nullable: true
+                fulfilment_date:
+                  type: string
+                  format: date
+                delivery_address:
+                  type: string
+                  nullable: true
+                notes:
+                  type: string
+                  nullable: true
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - product_variant_id
+                      - quantity
+                    properties:
+                      product_variant_id:
+                        type: integer
+                      quantity:
+                        type: number
+                      unit_price:
+                        type: number
+                        nullable: true
+  '/api/v1/external/catering-orders/{externalReference}':
+    get:
+      operationId: external_catering_orders_show
+      tags:
+        - External
+      summary: api.v1.external.catering-orders.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/ApiKeyHeader'
+        -
+          name: externalReference
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+        -
+          apiKeyAuth: {  }
+  '/api/v1/external/catering-orders/{externalReference}/status':
+    patch:
+      operationId: external_catering_orders_status_update
+      tags:
+        - External
+      summary: api.v1.external.catering-orders.status.update
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/ApiKeyHeader'
+        -
+          name: externalReference
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          apiKeyAuth: {  }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - confirmed
+                    - void
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: 'Opaque access token'
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
   parameters:
     AcceptHeader:
       name: Accept
@@ -5366,6 +5776,13 @@ components:
         type: integer
         example: 1
       description: 'Active company context for tenant-scoped endpoints.'
+    ApiKeyHeader:
+      name: X-API-Key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: 'External API key generated from organization API key management.'
   schemas:
     ApiEnvelope:
       type: object

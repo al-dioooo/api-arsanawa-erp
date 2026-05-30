@@ -23,6 +23,7 @@ return [
             ['key' => 'organization.manage-members', 'label' => 'Manage members'],
             ['key' => 'organization.manage-roles', 'label' => 'Manage roles'],
             ['key' => 'organization.manage-entitlements', 'label' => 'Manage module entitlements'],
+            ['key' => 'organization.manage-api-keys', 'label' => 'Manage external API keys'],
         ],
     ],
 

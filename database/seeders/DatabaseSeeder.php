@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,12 +19,21 @@ class DatabaseSeeder extends Seeder
         $this->call(CurrencySeeder::class);
         $this->call(PermissionSeeder::class);
 
-        User::factory()->create([
+        $alice = User::query()->firstOrNew(['username' => 'aliceevr']);
+        $alice->forceFill([
             'name' => 'Alice Evergarden',
-            'username' => 'aliceevr',
             'email' => 'hello@al.is-a.dev',
-            'password' => bcrypt('aldio1234'),
-        ]);
+            'password' => Hash::make('aldio1234'),
+            'is_developer' => true,
+        ])->save();
+
+        $sekaloriOwner = User::query()->firstOrNew(['username' => 'sekalori']);
+        $sekaloriOwner->forceFill([
+            'name' => 'SEKALORI Demo Owner',
+            'email' => 'owner@sekalori.test',
+            'password' => Hash::make('sekalori1234'),
+            'is_developer' => false,
+        ])->save();
 
         $this->call(DemoCompanySeeder::class);
         $this->call(InventoryDemoSeeder::class);

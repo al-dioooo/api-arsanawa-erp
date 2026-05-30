@@ -2,6 +2,8 @@
 
 namespace App\Modules\Partners\Http\Requests\Concerns;
 
+use App\Modules\Organization\Services\DeveloperAccess;
+
 trait AuthorizesPartnerRequests
 {
     protected function activeCompanyId(): ?int
@@ -20,6 +22,10 @@ trait AuthorizesPartnerRequests
         }
 
         setPermissionsTeamId($companyId);
+
+        if (app(DeveloperAccess::class)->userIsDeveloper($this->user())) {
+            return true;
+        }
 
         return $this->user()?->can($permission) ?? false;
     }

@@ -3,6 +3,7 @@
 namespace App\Modules\Pos\Http\Requests\Concerns;
 
 use App\Modules\Organization\Services\BranchPermission;
+use App\Modules\Organization\Services\DeveloperAccess;
 
 trait AuthorizesPosRequests
 {
@@ -30,6 +31,10 @@ trait AuthorizesPosRequests
 
         setPermissionsTeamId($companyId);
 
+        if (app(DeveloperAccess::class)->userIsDeveloper($this->user())) {
+            return true;
+        }
+
         return $this->user()?->can($permission) ?? false;
     }
 
@@ -39,6 +44,10 @@ trait AuthorizesPosRequests
 
         if ($user === null) {
             return false;
+        }
+
+        if (app(DeveloperAccess::class)->userIsDeveloper($user)) {
+            return true;
         }
 
         return app(BranchPermission::class)->userCanInBranch($user, $permission, $branchId);

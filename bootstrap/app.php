@@ -5,6 +5,7 @@ use App\Modules\Authentication\Providers\AuthenticationServiceProvider;
 use App\Modules\Finance\Providers\FinanceServiceProvider;
 use App\Modules\Identity\Providers\IdentityServiceProvider;
 use App\Modules\Inventory\Providers\InventoryServiceProvider;
+use App\Modules\Organization\Http\Middleware\AuthenticateExternalApiKey;
 use App\Modules\Organization\Http\Middleware\SetCurrentCompany;
 use App\Modules\Organization\Providers\OrganizationServiceProvider;
 use App\Modules\Partners\Providers\PartnersServiceProvider;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
 
         $middleware->alias([
+            'external.api-key' => AuthenticateExternalApiKey::class,
             'organization.company-context' => SetCurrentCompany::class,
         ]);
     })

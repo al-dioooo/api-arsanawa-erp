@@ -139,6 +139,33 @@ describe('GET /api/v1/organization/companies', function () {
             ->assertJsonPath('data.companies.0.company.id', $ownedCompany->id)
             ->assertJsonPath('data.companies.0.membership.status', 'active');
     });
+
+    it('lists active companies without memberships for developer users', function () {
+        $developer = User::factory()->create(['is_developer' => true]);
+        $activeCompany = Company::create(['name' => 'Developer Visible Company', 'slug' => 'developer-visible-company', 'status' => 'active']);
+        $inactiveCompany = Company::create(['name' => 'Inactive Company', 'slug' => 'inactive-company', 'status' => 'inactive']);
+
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => $developer->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withToken($token)
+            ->getJson('/api/v1/organization/companies')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.companies')
+            ->assertJsonPath('data.companies.0.company.id', $activeCompany->id)
+            ->assertJsonPath('data.companies.0.membership', null);
+
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $activeCompany->id)
+            ->getJson('/api/v1/organization/context')
+            ->assertSuccessful()
+            ->assertJsonPath('data.company.id', $activeCompany->id)
+            ->assertJsonPath('data.membership', null);
+
+        expect($inactiveCompany->exists)->toBeTrue();
+    });
 });
 
 describe('GET /api/v1/organization/context', function () {

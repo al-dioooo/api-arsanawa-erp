@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\Organization\Actions\AssignBranchRole;
 use App\Modules\Organization\Actions\CreateBranch;
 use App\Modules\Organization\Actions\CreateCompany;
+use App\Modules\Organization\Actions\CreateExternalApiKey;
 use App\Modules\Organization\Actions\CreateMembership;
 use App\Modules\Organization\Actions\CreateRole;
 use App\Modules\Organization\Actions\DeleteRole;
@@ -18,11 +19,14 @@ use App\Modules\Organization\Actions\ListModuleEntitlements;
 use App\Modules\Organization\Actions\ListRoles;
 use App\Modules\Organization\Actions\ListUserCompanies;
 use App\Modules\Organization\Actions\RevokeBranchRole;
+use App\Modules\Organization\Actions\RevokeExternalApiKey;
+use App\Modules\Organization\Actions\RotateExternalApiKey;
 use App\Modules\Organization\Actions\UpdateModuleEntitlements;
 use App\Modules\Organization\Actions\UpdateRole;
 use App\Modules\Organization\Http\Requests\AssignBranchRoleRequest;
 use App\Modules\Organization\Http\Requests\CreateBranchRequest;
 use App\Modules\Organization\Http\Requests\CreateCompanyRequest;
+use App\Modules\Organization\Http\Requests\CreateExternalApiKeyRequest;
 use App\Modules\Organization\Http\Requests\CreateMembershipRequest;
 use App\Modules\Organization\Http\Requests\CreateRoleRequest;
 use App\Modules\Organization\Http\Requests\ListBranchesRequest;
@@ -30,6 +34,7 @@ use App\Modules\Organization\Http\Requests\ListCompaniesRequest;
 use App\Modules\Organization\Http\Requests\ListMembershipsRequest;
 use App\Modules\Organization\Http\Requests\ListModuleEntitlementsRequest;
 use App\Modules\Organization\Http\Requests\ManageBranchRolesRequest;
+use App\Modules\Organization\Http\Requests\ManageExternalApiKeysRequest;
 use App\Modules\Organization\Http\Requests\ManageRolesRequest;
 use App\Modules\Organization\Http\Requests\ShowOrganizationContextRequest;
 use App\Modules\Organization\Http\Requests\UpdateModuleEntitlementsRequest;
@@ -38,11 +43,13 @@ use App\Modules\Organization\Http\Resources\BranchAssignmentResource;
 use App\Modules\Organization\Http\Resources\BranchResource;
 use App\Modules\Organization\Http\Resources\CompanyMembershipResource;
 use App\Modules\Organization\Http\Resources\CompanyResource;
+use App\Modules\Organization\Http\Resources\ExternalApiKeyResource;
 use App\Modules\Organization\Http\Resources\MembershipResource;
 use App\Modules\Organization\Http\Resources\ModuleEntitlementResource;
 use App\Modules\Organization\Http\Resources\RoleResource;
 use App\Modules\Organization\Models\Branch;
 use App\Modules\Organization\Models\Company;
+use App\Modules\Organization\Models\ExternalApiKey;
 use App\Modules\Organization\Support\BuiltinRoles;
 use App\Support\PermissionCatalog;
 use Illuminate\Http\JsonResponse;
@@ -159,6 +166,77 @@ class OrganizationController extends Controller
         return $this->success(
             ['entitlements' => ModuleEntitlementResource::collection($entitlements)],
             __('Module entitlements updated.'),
+        );
+    }
+
+    public function apiKeys(ManageExternalApiKeysRequest $request, Company $company): JsonResponse
+    {
+        $apiKeys = ExternalApiKey::query()
+            ->where('company_id', $company->id)
+            ->latest('id')
+            ->get();
+
+        return $this->success(
+            ['api_keys' => ExternalApiKeyResource::collection($apiKeys)],
+            __('API keys retrieved.'),
+        );
+    }
+
+    public function storeApiKey(
+        CreateExternalApiKeyRequest $request,
+        CreateExternalApiKey $action,
+        Company $company,
+    ): JsonResponse {
+        $result = $action->execute($company, $request->user(), $request->validated());
+
+        return $this->success(
+            [
+                'plain_text_key' => $result['plainTextKey'],
+                'api_key' => new ExternalApiKeyResource($result['apiKey']),
+            ],
+            __('API key created.'),
+            201,
+        );
+    }
+
+    public function showApiKey(ManageExternalApiKeysRequest $request, Company $company, int $apiKey): JsonResponse
+    {
+        $resolved = $this->resolveApiKey($company, $apiKey);
+
+        return $this->success(
+            ['api_key' => new ExternalApiKeyResource($resolved)],
+            __('API key retrieved.'),
+        );
+    }
+
+    public function rotateApiKey(
+        ManageExternalApiKeysRequest $request,
+        RotateExternalApiKey $action,
+        Company $company,
+        int $apiKey,
+    ): JsonResponse {
+        $result = $action->execute($this->resolveApiKey($company, $apiKey), $request->user());
+
+        return $this->success(
+            [
+                'plain_text_key' => $result['plainTextKey'],
+                'api_key' => new ExternalApiKeyResource($result['apiKey']),
+            ],
+            __('API key rotated.'),
+        );
+    }
+
+    public function revokeApiKey(
+        ManageExternalApiKeysRequest $request,
+        RevokeExternalApiKey $action,
+        Company $company,
+        int $apiKey,
+    ): JsonResponse {
+        $revoked = $action->execute($this->resolveApiKey($company, $apiKey), $request->user());
+
+        return $this->success(
+            ['api_key' => new ExternalApiKeyResource($revoked)],
+            __('API key revoked.'),
         );
     }
 
@@ -291,5 +369,12 @@ class OrganizationController extends Controller
         $action->execute($branch, $user->id);
 
         return $this->success(null, __('Branch role revoked.'));
+    }
+
+    private function resolveApiKey(Company $company, int $apiKey): ExternalApiKey
+    {
+        return ExternalApiKey::query()
+            ->where('company_id', $company->id)
+            ->findOrFail($apiKey);
     }
 }

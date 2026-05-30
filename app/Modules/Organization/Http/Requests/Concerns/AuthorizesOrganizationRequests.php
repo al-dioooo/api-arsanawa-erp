@@ -4,6 +4,7 @@ namespace App\Modules\Organization\Http\Requests\Concerns;
 
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Modules\Organization\Services\DeveloperAccess;
 
 trait AuthorizesOrganizationRequests
 {
@@ -43,6 +44,14 @@ trait AuthorizesOrganizationRequests
         $membership = $this->activeMembershipForRouteCompany();
 
         if (! $membership) {
+            $company = $this->routeCompany();
+
+            if ($company?->status === 'active' && app(DeveloperAccess::class)->userIsDeveloper($this->user())) {
+                setPermissionsTeamId($company->id);
+
+                return true;
+            }
+
             return false;
         }
 
@@ -53,6 +62,14 @@ trait AuthorizesOrganizationRequests
 
     protected function canForRouteCompany(string $permission): bool
     {
+        $company = $this->routeCompany();
+
+        if ($company?->status === 'active' && app(DeveloperAccess::class)->userIsDeveloper($this->user())) {
+            setPermissionsTeamId($company->id);
+
+            return true;
+        }
+
         if (! $this->isActiveCompanyMember()) {
             return false;
         }
