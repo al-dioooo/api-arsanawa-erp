@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         ])->save();
 
         $this->call(DemoCompanySeeder::class);
-        $this->call(InventoryDemoSeeder::class);
+        $this->call(SekaloriInventoryDemoSeeder::class);
         $this->call(FinanceDemoSeeder::class);
         $this->call(PosDemoSeeder::class);
     }

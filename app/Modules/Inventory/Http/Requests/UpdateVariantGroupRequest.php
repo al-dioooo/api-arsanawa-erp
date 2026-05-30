@@ -6,7 +6,7 @@ use App\Modules\Inventory\Http\Requests\Concerns\AuthorizesInventoryRequests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateVariantRequest extends FormRequest
+class UpdateVariantGroupRequest extends FormRequest
 {
     use AuthorizesInventoryRequests;
 
@@ -18,27 +18,22 @@ class UpdateVariantRequest extends FormRequest
     public function rules(): array
     {
         $companyId = $this->activeCompanyId();
+        $variantGroup = (int) $this->route('variantGroup');
 
         return [
-            'sku' => [
+            'name' => ['sometimes', 'string', 'max:160'],
+            'code' => [
                 'sometimes',
-                'required',
                 'string',
                 'max:80',
-                Rule::unique('product_variants', 'sku')
-                    ->where('company_id', $companyId)
-                    ->ignore($this->route('variant')),
+                Rule::unique('variant_groups', 'code')->where('company_id', $companyId)->ignore($variantGroup),
             ],
-            'barcode' => ['sometimes', 'nullable', 'string', 'max:80'],
-            'name' => ['sometimes', 'nullable', 'string', 'max:200'],
-            'attributes' => ['sometimes', 'nullable', 'array'],
-            'purchase_uom_id' => [
+            'unit_of_measure_id' => [
                 'sometimes',
-                'nullable',
                 'integer',
                 Rule::exists('units_of_measure', 'id')->where('company_id', $companyId),
             ],
-            'purchase_conversion_factor' => ['sometimes', 'numeric', 'min:0.0001'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

@@ -12,6 +12,7 @@ class StockMovement extends Model
         'company_id',
         'branch_id',
         'product_variant_id',
+        'product_unit_id',
         'stock_lot_id',
         'type',
         'quantity',
@@ -29,6 +30,7 @@ class StockMovement extends Model
             'company_id' => 'integer',
             'branch_id' => 'integer',
             'product_variant_id' => 'integer',
+            'product_unit_id' => 'integer',
             'stock_lot_id' => 'integer',
             'quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
@@ -39,6 +41,11 @@ class StockMovement extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function productUnit(): BelongsTo
+    {
+        return $this->belongsTo(ProductUnit::class);
     }
 
     public function lot(): BelongsTo

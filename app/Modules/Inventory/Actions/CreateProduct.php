@@ -43,7 +43,7 @@ class CreateProduct
                 ]);
             }
 
-            return $product->load(['category', 'brand', 'baseUom', 'variants', 'tags']);
+            return $product->load(['category', 'brand', 'baseUom', 'variants', 'productUnits.variants.group.unit', 'tags']);
         });
     }
 }

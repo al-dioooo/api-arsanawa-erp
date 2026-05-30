@@ -21,6 +21,7 @@ class ProductResource extends JsonResource
             'attributes' => $this->attributes,
             'status' => $this->status,
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
+            'product_units' => ProductUnitResource::collection($this->whenLoaded('productUnits')),
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->map(fn ($tag): array => [
                 'id' => $tag->id,
                 'name' => $tag->name,

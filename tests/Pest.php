@@ -85,6 +85,32 @@ function createProduct(string $token, int $companyId, array $data): int
         ->json('data.product.id');
 }
 
+function createVariantGroup(string $token, int $companyId, string $name, string $code, ?int $unitId = null): int
+{
+    $unitId ??= createUnit($token, $companyId, mb_strtoupper(substr($code, 0, 3)) ?: 'UNT');
+
+    return test()->withToken($token)
+        ->withHeader('X-Company-Id', (string) $companyId)
+        ->postJson('/api/v1/inventory/variant-groups', [
+            'name' => $name,
+            'code' => $code,
+            'unit_of_measure_id' => $unitId,
+        ])
+        ->json('data.variant_group.id');
+}
+
+function createVariant(string $token, int $companyId, int $variantGroupId, string $name, string $code): int
+{
+    return test()->withToken($token)
+        ->withHeader('X-Company-Id', (string) $companyId)
+        ->postJson('/api/v1/inventory/variants', [
+            'variant_group_id' => $variantGroupId,
+            'name' => $name,
+            'code' => $code,
+        ])
+        ->json('data.variant.id');
+}
+
 /**
  * Create a user, a company they own, and return the auth context.
  * Identical to inventoryActor but with a Finance-specific company name.

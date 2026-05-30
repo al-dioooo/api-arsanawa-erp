@@ -10,6 +10,7 @@ class Price extends Model
     protected $fillable = [
         'price_list_id',
         'product_variant_id',
+        'product_unit_id',
         'price',
         'maximum_retail_price',
         'effective_from',
@@ -23,6 +24,7 @@ class Price extends Model
         return [
             'price_list_id' => 'integer',
             'product_variant_id' => 'integer',
+            'product_unit_id' => 'integer',
             'price' => 'decimal:4',
             'maximum_retail_price' => 'decimal:4',
             'effective_from' => 'date',
@@ -38,5 +40,10 @@ class Price extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function productUnit(): BelongsTo
+    {
+        return $this->belongsTo(ProductUnit::class);
     }
 }

@@ -1,6 +1,13 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Inventory\Models\Category;
+use App\Modules\Inventory\Models\Price;
+use App\Modules\Inventory\Models\ProductUnit;
+use App\Modules\Inventory\Models\StockLot;
+use App\Modules\Inventory\Models\UnitOfMeasure;
+use App\Modules\Inventory\Models\Variant;
+use App\Modules\Inventory\Models\VariantGroup;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
 use Database\Seeders\DatabaseSeeder;
@@ -69,5 +76,30 @@ describe('Database seeder', function (): void {
             ->where('company_id', $company->id)
             ->where('role', 'owner')
             ->count())->toBe(1);
+    });
+
+    it('seeds an idempotent SEKALORI inventory demo catalogue', function (): void {
+        $this->seed(DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
+
+        $company = Company::query()->where('slug', 'sekalori')->firstOrFail();
+
+        expect(UnitOfMeasure::where('company_id', $company->id)->where('code', 'PAX')->count())->toBe(1)
+            ->and(Category::where('company_id', $company->id)->where('name', 'Catering')->count())->toBe(1)
+            ->and(Category::where('company_id', $company->id)->where('name', 'Nasi Box')->count())->toBe(1)
+            ->and(VariantGroup::where('company_id', $company->id)->where('code', 'package-size')->count())->toBe(1)
+            ->and(Variant::where('company_id', $company->id)->where('code', '25-pax')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-NB-REG-25-AYM')->count())->toBe(1);
+
+        $nasiBox = Category::where('company_id', $company->id)->where('name', 'Nasi Box')->firstOrFail();
+        $regular = Category::where('company_id', $company->id)->where('name', 'Regular')->firstOrFail();
+        $variantGroup = VariantGroup::where('company_id', $company->id)->where('code', 'package-size')->firstOrFail();
+        $productUnit = ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-NB-REG-25-AYM')->firstOrFail();
+
+        expect($regular->parent_id)->toBe($nasiBox->id)
+            ->and($variantGroup->unit)->not->toBeNull()
+            ->and($productUnit->variants()->count())->toBeGreaterThanOrEqual(3)
+            ->and(Price::where('product_unit_id', $productUnit->id)->count())->toBeGreaterThanOrEqual(1)
+            ->and(StockLot::where('product_unit_id', $productUnit->id)->count())->toBeGreaterThanOrEqual(1);
     });
 });

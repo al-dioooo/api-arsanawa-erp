@@ -56,6 +56,11 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function productUnits(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'product_tag');

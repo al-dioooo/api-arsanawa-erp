@@ -8,23 +8,32 @@ use App\Modules\Inventory\Actions\CreateCategory;
 use App\Modules\Inventory\Actions\CreateDiscount;
 use App\Modules\Inventory\Actions\CreatePriceList;
 use App\Modules\Inventory\Actions\CreateProduct;
+use App\Modules\Inventory\Actions\CreateProductUnit;
 use App\Modules\Inventory\Actions\CreateReward;
 use App\Modules\Inventory\Actions\CreateUnitOfMeasure;
+use App\Modules\Inventory\Actions\CreateVariant;
+use App\Modules\Inventory\Actions\CreateVariantGroup;
 use App\Modules\Inventory\Actions\DeleteBrand;
 use App\Modules\Inventory\Actions\DeleteCategory;
 use App\Modules\Inventory\Actions\DeleteDiscount;
 use App\Modules\Inventory\Actions\DeleteProduct;
+use App\Modules\Inventory\Actions\DeleteProductUnit;
 use App\Modules\Inventory\Actions\DeleteReward;
 use App\Modules\Inventory\Actions\DeleteUnitOfMeasure;
+use App\Modules\Inventory\Actions\DeleteVariant;
+use App\Modules\Inventory\Actions\DeleteVariantGroup;
 use App\Modules\Inventory\Actions\GetProduct;
 use App\Modules\Inventory\Actions\GetStockValuation;
 use App\Modules\Inventory\Actions\ListBrands;
 use App\Modules\Inventory\Actions\ListCategories;
 use App\Modules\Inventory\Actions\ListProducts;
+use App\Modules\Inventory\Actions\ListProductUnits;
 use App\Modules\Inventory\Actions\ListStockLevels;
 use App\Modules\Inventory\Actions\ListStockLots;
 use App\Modules\Inventory\Actions\ListStockMovements;
 use App\Modules\Inventory\Actions\ListUnitsOfMeasure;
+use App\Modules\Inventory\Actions\ListVariants;
+use App\Modules\Inventory\Actions\ListVariantGroups;
 use App\Modules\Inventory\Actions\ManageProductTags;
 use App\Modules\Inventory\Actions\ManageVariants;
 use App\Modules\Inventory\Actions\MoveCategory;
@@ -38,28 +47,40 @@ use App\Modules\Inventory\Actions\SetPrice;
 use App\Modules\Inventory\Actions\UpdateBrand;
 use App\Modules\Inventory\Actions\UpdateCategory;
 use App\Modules\Inventory\Actions\UpdateProduct;
+use App\Modules\Inventory\Actions\UpdateProductUnit;
 use App\Modules\Inventory\Actions\UpdateUnitOfMeasure;
+use App\Modules\Inventory\Actions\UpdateVariant;
+use App\Modules\Inventory\Actions\UpdateVariantGroup;
 use App\Modules\Inventory\Http\Requests\AddVariantRequest;
 use App\Modules\Inventory\Http\Requests\CreateBrandRequest;
 use App\Modules\Inventory\Http\Requests\CreateCategoryRequest;
 use App\Modules\Inventory\Http\Requests\CreateDiscountRequest;
 use App\Modules\Inventory\Http\Requests\CreatePriceListRequest;
 use App\Modules\Inventory\Http\Requests\CreateProductRequest;
+use App\Modules\Inventory\Http\Requests\CreateProductUnitRequest;
 use App\Modules\Inventory\Http\Requests\CreateRewardRequest;
 use App\Modules\Inventory\Http\Requests\CreateUnitOfMeasureRequest;
+use App\Modules\Inventory\Http\Requests\CreateVariantGroupRequest;
+use App\Modules\Inventory\Http\Requests\CreateVariantRequest;
 use App\Modules\Inventory\Http\Requests\DeleteBrandRequest;
 use App\Modules\Inventory\Http\Requests\DeleteCategoryRequest;
 use App\Modules\Inventory\Http\Requests\DeleteDiscountRequest;
 use App\Modules\Inventory\Http\Requests\DeleteProductRequest;
+use App\Modules\Inventory\Http\Requests\DeleteProductUnitRequest;
 use App\Modules\Inventory\Http\Requests\DeleteRewardRequest;
 use App\Modules\Inventory\Http\Requests\DeleteUnitOfMeasureRequest;
+use App\Modules\Inventory\Http\Requests\DeleteVariantGroupRequest;
+use App\Modules\Inventory\Http\Requests\DeleteVariantMasterRequest;
 use App\Modules\Inventory\Http\Requests\DeleteVariantRequest;
 use App\Modules\Inventory\Http\Requests\ListBrandsRequest;
 use App\Modules\Inventory\Http\Requests\ListCategoriesRequest;
 use App\Modules\Inventory\Http\Requests\ListDiscountsRequest;
 use App\Modules\Inventory\Http\Requests\ListProductsRequest;
+use App\Modules\Inventory\Http\Requests\ListProductUnitsRequest;
 use App\Modules\Inventory\Http\Requests\ListRewardsRequest;
 use App\Modules\Inventory\Http\Requests\ListUnitsOfMeasureRequest;
+use App\Modules\Inventory\Http\Requests\ListVariantGroupsRequest;
+use App\Modules\Inventory\Http\Requests\ListVariantsRequest;
 use App\Modules\Inventory\Http\Requests\MoveCategoryRequest;
 use App\Modules\Inventory\Http\Requests\SetAvailabilityRequest;
 use App\Modules\Inventory\Http\Requests\SetPriceRequest;
@@ -72,27 +93,36 @@ use App\Modules\Inventory\Http\Requests\SyncTagsRequest;
 use App\Modules\Inventory\Http\Requests\UpdateBrandRequest;
 use App\Modules\Inventory\Http\Requests\UpdateCategoryRequest;
 use App\Modules\Inventory\Http\Requests\UpdateProductRequest;
+use App\Modules\Inventory\Http\Requests\UpdateProductUnitRequest;
 use App\Modules\Inventory\Http\Requests\UpdateUnitOfMeasureRequest;
+use App\Modules\Inventory\Http\Requests\UpdateVariantGroupRequest;
+use App\Modules\Inventory\Http\Requests\UpdateVariantMasterRequest;
 use App\Modules\Inventory\Http\Requests\UpdateVariantRequest;
 use App\Modules\Inventory\Http\Resources\BrandResource;
 use App\Modules\Inventory\Http\Resources\CategoryResource;
 use App\Modules\Inventory\Http\Resources\DiscountResource;
 use App\Modules\Inventory\Http\Resources\PriceListResource;
 use App\Modules\Inventory\Http\Resources\ProductResource;
+use App\Modules\Inventory\Http\Resources\ProductUnitResource;
 use App\Modules\Inventory\Http\Resources\ProductVariantResource;
 use App\Modules\Inventory\Http\Resources\RewardResource;
 use App\Modules\Inventory\Http\Resources\StockLotResource;
 use App\Modules\Inventory\Http\Resources\StockMovementResource;
 use App\Modules\Inventory\Http\Resources\StockTransferResource;
 use App\Modules\Inventory\Http\Resources\UnitOfMeasureResource;
+use App\Modules\Inventory\Http\Resources\VariantGroupResource;
+use App\Modules\Inventory\Http\Resources\VariantResource;
 use App\Modules\Inventory\Models\Brand;
 use App\Modules\Inventory\Models\Category;
 use App\Modules\Inventory\Models\Discount;
 use App\Modules\Inventory\Models\PriceList;
 use App\Modules\Inventory\Models\Product;
+use App\Modules\Inventory\Models\ProductUnit;
 use App\Modules\Inventory\Models\ProductVariant;
 use App\Modules\Inventory\Models\Reward;
 use App\Modules\Inventory\Models\UnitOfMeasure;
+use App\Modules\Inventory\Models\Variant;
+use App\Modules\Inventory\Models\VariantGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -266,6 +296,174 @@ class InventoryController extends Controller
         $action->execute($this->resolveUnit($request, $unit));
 
         return $this->success(null, __('Unit of measure deleted.'));
+    }
+
+    // --- Variant groups ---------------------------------------------------
+
+    public function variantGroups(ListVariantGroupsRequest $request, ListVariantGroups $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        return $this->success(
+            ['variant_groups' => VariantGroupResource::collection($action->execute($companyId))],
+            __('Variant groups retrieved.'),
+        );
+    }
+
+    public function storeVariantGroup(CreateVariantGroupRequest $request, CreateVariantGroup $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $variantGroup = $action->execute($companyId, $request->user(), $request->validated());
+
+        return $this->success(
+            ['variant_group' => new VariantGroupResource($variantGroup)],
+            __('Variant group created.'),
+            201,
+        );
+    }
+
+    public function showVariantGroup(ListVariantGroupsRequest $request, int $variantGroup): JsonResponse
+    {
+        return $this->success(
+            ['variant_group' => new VariantGroupResource($this->resolveVariantGroup($request, $variantGroup)->load(['unit', 'variants']))],
+            __('Variant group retrieved.'),
+        );
+    }
+
+    public function updateVariantGroup(UpdateVariantGroupRequest $request, UpdateVariantGroup $action, int $variantGroup): JsonResponse
+    {
+        $updated = $action->execute(
+            $this->resolveVariantGroup($request, $variantGroup),
+            $request->user(),
+            $request->validated(),
+        );
+
+        return $this->success(
+            ['variant_group' => new VariantGroupResource($updated)],
+            __('Variant group updated.'),
+        );
+    }
+
+    public function destroyVariantGroup(DeleteVariantGroupRequest $request, DeleteVariantGroup $action, int $variantGroup): JsonResponse
+    {
+        $action->execute($this->resolveVariantGroup($request, $variantGroup));
+
+        return $this->success(null, __('Variant group deleted.'));
+    }
+
+    // --- Variants master data --------------------------------------------
+
+    public function variants(ListVariantsRequest $request, ListVariants $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        return $this->success(
+            ['variants' => VariantResource::collection($action->execute($companyId, $request->validated()))],
+            __('Variants retrieved.'),
+        );
+    }
+
+    public function storeVariantMaster(CreateVariantRequest $request, CreateVariant $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $variant = $action->execute($companyId, $request->user(), $request->validated());
+
+        return $this->success(
+            ['variant' => new VariantResource($variant)],
+            __('Variant created.'),
+            201,
+        );
+    }
+
+    public function showVariant(ListVariantsRequest $request, int $variant): JsonResponse
+    {
+        return $this->success(
+            ['variant' => new VariantResource($this->resolveVariantMaster($request, $variant)->load('group.unit'))],
+            __('Variant retrieved.'),
+        );
+    }
+
+    public function updateVariantMaster(UpdateVariantMasterRequest $request, UpdateVariant $action, int $variant): JsonResponse
+    {
+        $updated = $action->execute(
+            $this->resolveVariantMaster($request, $variant),
+            $request->user(),
+            $request->validated(),
+        );
+
+        return $this->success(
+            ['variant' => new VariantResource($updated)],
+            __('Variant updated.'),
+        );
+    }
+
+    public function destroyVariantMaster(DeleteVariantMasterRequest $request, DeleteVariant $action, int $variant): JsonResponse
+    {
+        $action->execute($this->resolveVariantMaster($request, $variant));
+
+        return $this->success(null, __('Variant deleted.'));
+    }
+
+    // --- Product units / sellable SKUs -----------------------------------
+
+    public function productUnits(ListProductUnitsRequest $request, ListProductUnits $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $paginator = $action->execute($companyId, $request->validated());
+
+        return $this->success(
+            [
+                'product_units' => ProductUnitResource::collection($paginator->getCollection()),
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
+            __('Product units retrieved.'),
+        );
+    }
+
+    public function storeProductUnit(CreateProductUnitRequest $request, CreateProductUnit $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $productUnit = $action->execute($companyId, $request->user(), $request->validated());
+
+        return $this->success(
+            ['product_unit' => new ProductUnitResource($productUnit)],
+            __('Product unit created.'),
+            201,
+        );
+    }
+
+    public function showProductUnit(ListProductUnitsRequest $request, int $productUnit): JsonResponse
+    {
+        return $this->success(
+            ['product_unit' => new ProductUnitResource($this->resolveProductUnit($request, $productUnit)->load(['product.category', 'product.brand', 'variants.group.unit']))],
+            __('Product unit retrieved.'),
+        );
+    }
+
+    public function updateProductUnit(UpdateProductUnitRequest $request, UpdateProductUnit $action, int $productUnit): JsonResponse
+    {
+        $updated = $action->execute(
+            $this->resolveProductUnit($request, $productUnit),
+            $request->user(),
+            $request->validated(),
+        );
+
+        return $this->success(
+            ['product_unit' => new ProductUnitResource($updated)],
+            __('Product unit updated.'),
+        );
+    }
+
+    public function destroyProductUnit(DeleteProductUnitRequest $request, DeleteProductUnit $action, int $productUnit): JsonResponse
+    {
+        $action->execute($this->resolveProductUnit($request, $productUnit));
+
+        return $this->success(null, __('Product unit deleted.'));
     }
 
     // --- Products ---------------------------------------------------------
@@ -635,6 +833,27 @@ class InventoryController extends Controller
     private function resolveUnit(Request $request, int $id): UnitOfMeasure
     {
         return UnitOfMeasure::query()
+            ->where('company_id', $request->attributes->get('active_company_id'))
+            ->findOrFail($id);
+    }
+
+    private function resolveVariantGroup(Request $request, int $id): VariantGroup
+    {
+        return VariantGroup::query()
+            ->where('company_id', $request->attributes->get('active_company_id'))
+            ->findOrFail($id);
+    }
+
+    private function resolveVariantMaster(Request $request, int $id): Variant
+    {
+        return Variant::query()
+            ->where('company_id', $request->attributes->get('active_company_id'))
+            ->findOrFail($id);
+    }
+
+    private function resolveProductUnit(Request $request, int $id): ProductUnit
+    {
+        return ProductUnit::query()
             ->where('company_id', $request->attributes->get('active_company_id'))
             ->findOrFail($id);
     }

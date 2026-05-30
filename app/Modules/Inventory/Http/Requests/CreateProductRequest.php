@@ -45,7 +45,7 @@ class CreateProductRequest extends FormRequest
             'track_stock' => ['sometimes', 'boolean'],
             'attributes' => ['sometimes', 'nullable', 'array'],
             'status' => ['sometimes', 'string', Rule::in(['active', 'inactive'])],
-            'variants' => ['required', 'array', 'min:1'],
+            'variants' => ['sometimes', 'array', 'min:1'],
             'variants.*.sku' => [
                 'required',
                 'string',

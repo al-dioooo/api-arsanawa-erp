@@ -12,6 +12,7 @@ class StockLot extends Model
         'company_id',
         'branch_id',
         'product_variant_id',
+        'product_unit_id',
         'lot_number',
         'received_quantity',
         'remaining_quantity',
@@ -29,6 +30,7 @@ class StockLot extends Model
             'company_id' => 'integer',
             'branch_id' => 'integer',
             'product_variant_id' => 'integer',
+            'product_unit_id' => 'integer',
             'received_quantity' => 'decimal:4',
             'remaining_quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
@@ -40,6 +42,11 @@ class StockLot extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function productUnit(): BelongsTo
+    {
+        return $this->belongsTo(ProductUnit::class);
     }
 
     public function scopeActive(Builder $query): Builder

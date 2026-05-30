@@ -144,6 +144,24 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::patch('units-of-measure/{unit}', [InventoryController::class, 'updateUnit'])->name('units.update');
         Route::delete('units-of-measure/{unit}', [InventoryController::class, 'destroyUnit'])->name('units.destroy');
 
+        Route::get('variant-groups', [InventoryController::class, 'variantGroups'])->name('variant-groups.index');
+        Route::post('variant-groups', [InventoryController::class, 'storeVariantGroup'])->name('variant-groups.store');
+        Route::get('variant-groups/{variantGroup}', [InventoryController::class, 'showVariantGroup'])->name('variant-groups.show');
+        Route::patch('variant-groups/{variantGroup}', [InventoryController::class, 'updateVariantGroup'])->name('variant-groups.update');
+        Route::delete('variant-groups/{variantGroup}', [InventoryController::class, 'destroyVariantGroup'])->name('variant-groups.destroy');
+
+        Route::get('variants', [InventoryController::class, 'variants'])->name('variants.index');
+        Route::post('variants', [InventoryController::class, 'storeVariantMaster'])->name('variants.store');
+        Route::get('variants/{variant}', [InventoryController::class, 'showVariant'])->name('variants.show');
+        Route::patch('variants/{variant}', [InventoryController::class, 'updateVariantMaster'])->name('variants.update');
+        Route::delete('variants/{variant}', [InventoryController::class, 'destroyVariantMaster'])->name('variants.destroy');
+
+        Route::get('product-units', [InventoryController::class, 'productUnits'])->name('product-units.index');
+        Route::post('product-units', [InventoryController::class, 'storeProductUnit'])->name('product-units.store');
+        Route::get('product-units/{productUnit}', [InventoryController::class, 'showProductUnit'])->name('product-units.show');
+        Route::patch('product-units/{productUnit}', [InventoryController::class, 'updateProductUnit'])->name('product-units.update');
+        Route::delete('product-units/{productUnit}', [InventoryController::class, 'destroyProductUnit'])->name('product-units.destroy');
+
         Route::get('products', [InventoryController::class, 'products'])->name('products.index');
         Route::post('products', [InventoryController::class, 'storeProduct'])->name('products.store');
         Route::get('products/{product}', [InventoryController::class, 'showProduct'])->name('products.show');

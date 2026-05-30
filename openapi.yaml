@@ -2585,6 +2585,180 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/inventory/product-units:
+    get:
+      operationId: inventory_product_units_index
+      tags: [Inventory]
+      summary: api.v1.inventory.product-units.index
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    post:
+      operationId: inventory_product_units_store
+      tags: [Inventory]
+      summary: api.v1.inventory.product-units.store
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/inventory/product-units/{productUnit}':
+    get:
+      operationId: inventory_product_units_show
+      tags: [Inventory]
+      summary: api.v1.inventory.product-units.show
+      parameters:
+        -
+          name: productUnit
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    patch:
+      operationId: inventory_product_units_update
+      tags: [Inventory]
+      summary: api.v1.inventory.product-units.update
+      parameters:
+        -
+          name: productUnit
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    delete:
+      operationId: inventory_product_units_destroy
+      tags: [Inventory]
+      summary: api.v1.inventory.product-units.destroy
+      parameters:
+        -
+          name: productUnit
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  /api/v1/inventory/variant-groups:
+    get:
+      operationId: inventory_variant_groups_index
+      tags: [Inventory]
+      summary: api.v1.inventory.variant-groups.index
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    post:
+      operationId: inventory_variant_groups_store
+      tags: [Inventory]
+      summary: api.v1.inventory.variant-groups.store
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/inventory/variant-groups/{variantGroup}':
+    get:
+      operationId: inventory_variant_groups_show
+      tags: [Inventory]
+      summary: api.v1.inventory.variant-groups.show
+      parameters:
+        -
+          name: variantGroup
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    patch:
+      operationId: inventory_variant_groups_update
+      tags: [Inventory]
+      summary: api.v1.inventory.variant-groups.update
+      parameters:
+        -
+          name: variantGroup
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    delete:
+      operationId: inventory_variant_groups_destroy
+      tags: [Inventory]
+      summary: api.v1.inventory.variant-groups.destroy
+      parameters:
+        -
+          name: variantGroup
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  /api/v1/inventory/variants:
+    get:
+      operationId: inventory_variants_index
+      tags: [Inventory]
+      summary: api.v1.inventory.variants.index
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    post:
+      operationId: inventory_variants_store
+      tags: [Inventory]
+      summary: api.v1.inventory.variants.store
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/inventory/variants/{variant}':
+    get:
+      operationId: inventory_variants_show
+      tags: [Inventory]
+      summary: api.v1.inventory.variants.show
+      parameters:
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    patch:
+      operationId: inventory_variants_update
+      tags: [Inventory]
+      summary: api.v1.inventory.variants.update
+      parameters:
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+    delete:
+      operationId: inventory_variants_destroy
+      tags: [Inventory]
+      summary: api.v1.inventory.variants.destroy
+      parameters:
+        -
+          name: variant
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
   /api/v1/inventory/products:
     get:
       operationId: inventory_products_index
