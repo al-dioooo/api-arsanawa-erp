@@ -3390,6 +3390,37 @@ paths:
       security:
         -
           bearerAuth: {  }
+  /api/v1/inventory/stock/movements/{movement}:
+    get:
+      operationId: inventory_stock_movements_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.stock.movements.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: movement
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/inventory/stock/receipts:
     post:
       operationId: inventory_stock_receipts_store

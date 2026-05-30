@@ -14,6 +14,8 @@ class StockLotResource extends JsonResource
             'company_id' => $this->company_id,
             'branch_id' => $this->branch_id,
             'product_variant_id' => $this->product_variant_id,
+            'product_unit_id' => $this->product_unit_id,
+            'product_unit' => new ProductUnitResource($this->whenLoaded('productUnit')),
             'lot_number' => $this->lot_number,
             'received_quantity' => $this->received_quantity,
             'remaining_quantity' => $this->remaining_quantity,

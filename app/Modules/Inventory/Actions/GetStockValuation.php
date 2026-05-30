@@ -17,7 +17,8 @@ class GetStockValuation
     public function execute(int $companyId, array $params = []): array
     {
         $branchId = isset($params['branch_id']) ? (int) $params['branch_id'] : null;
-        $total = $this->stockService->valuation($companyId, $branchId);
+        $productUnitId = isset($params['product_unit_id']) ? (int) $params['product_unit_id'] : null;
+        $total = $this->stockService->valuation($companyId, $branchId, $productUnitId);
 
         return ['total_value' => number_format($total, 4, '.', '')];
     }

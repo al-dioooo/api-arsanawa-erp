@@ -183,6 +183,7 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::get('stock/levels', [InventoryController::class, 'stockLevels'])->name('stock.levels.index');
         Route::get('stock/lots', [InventoryController::class, 'stockLots'])->name('stock.lots.index');
         Route::get('stock/movements', [InventoryController::class, 'stockMovements'])->name('stock.movements.index');
+        Route::get('stock/movements/{movement}', [InventoryController::class, 'stockMovement'])->name('stock.movements.show');
         Route::get('stock/valuation', [InventoryController::class, 'stockValuation'])->name('stock.valuation.index');
 
         Route::get('price-lists', [InventoryController::class, 'priceLists'])->name('price-lists.index');

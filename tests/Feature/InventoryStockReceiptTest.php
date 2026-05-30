@@ -8,6 +8,43 @@ beforeEach(function (): void {
 });
 
 describe('Inventory stock receipts', function () {
+    it('records a receipt with a product unit sellable SKU', function (): void {
+        [, $token, $companyId, $branchId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Nasi Box Regular',
+            'base_uom_id' => $uom,
+        ]);
+        $productUnitId = createProductUnit($token, $companyId, $productId, 'SKL-NBR-25');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 25,
+                'unit_cost' => 35000,
+                'received_at' => '2026-01-15',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.lot.product_unit_id', $productUnitId)
+            ->assertJsonPath('data.lot.product_unit.id', $productUnitId)
+            ->assertJsonPath('data.lot.remaining_quantity', '25.0000');
+
+        $this->assertDatabaseHas('stock_lots', [
+            'product_unit_id' => $productUnitId,
+            'branch_id' => $branchId,
+            'remaining_quantity' => '25.0000',
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'product_unit_id' => $productUnitId,
+            'branch_id' => $branchId,
+            'type' => 'receipt',
+            'quantity' => '25.0000',
+        ]);
+    });
+
     it('records a receipt with a lot and movement', function (): void {
         [, $token, $companyId, $branchId] = inventoryActor();
         $uom = createUnit($token, $companyId, 'pcs');

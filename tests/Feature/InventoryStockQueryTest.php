@@ -8,6 +8,95 @@ beforeEach(function (): void {
 });
 
 describe('Inventory stock queries', function () {
+    it('filters stock levels lots movements valuation and detail by product unit', function (): void {
+        [, $token, $companyId, $branchId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Catering Package',
+            'base_uom_id' => $uom,
+        ]);
+        $firstUnitId = createProductUnit($token, $companyId, $productId, 'SKL-CT-25');
+        $secondUnitId = createProductUnit($token, $companyId, $productId, 'SKL-CT-50');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_unit_id' => $firstUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 10,
+                'unit_cost' => 10000,
+                'lot_number' => 'PU-LOT-1',
+            ])->assertCreated();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_unit_id' => $secondUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 5,
+                'unit_cost' => 50000,
+                'lot_number' => 'PU-LOT-2',
+            ])->assertCreated();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/levels?product_unit_id={$firstUnitId}&branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.on_hand', '10.0000');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/lots?product_unit_id={$firstUnitId}&branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.lots')
+            ->assertJsonPath('data.lots.0.product_unit_id', $firstUnitId);
+
+        $movementId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/movements?product_unit_id={$firstUnitId}&branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.movements')
+            ->assertJsonPath('data.movements.0.product_unit_id', $firstUnitId)
+            ->json('data.movements.0.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/valuation?product_unit_id={$firstUnitId}&branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.total_value', '100000.0000');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/movements/{$movementId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.movement.id', $movementId)
+            ->assertJsonPath('data.movement.product_unit_id', $firstUnitId)
+            ->assertJsonPath('data.movement.product_unit.id', $firstUnitId);
+    });
+
+    it('does not expose stock movement detail across companies', function (): void {
+        [, $tokenA, $companyA, $branchA] = inventoryActor();
+        [, $tokenB, $companyB] = inventoryActor();
+        $uom = createUnit($tokenA, $companyA, 'pcs');
+        $productId = createProduct($tokenA, $companyA, [
+            'name' => 'Private Stock',
+            'base_uom_id' => $uom,
+        ]);
+        $productUnitId = createProductUnit($tokenA, $companyA, $productId, 'PRIVATE-SKU');
+
+        $this->withToken($tokenA)->withHeader('X-Company-Id', (string) $companyA)
+            ->withHeader('X-Branch-Id', (string) $branchA)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchA,
+                'quantity' => 1,
+                'unit_cost' => 1000,
+            ])->assertCreated();
+
+        $movementId = $this->withToken($tokenA)->withHeader('X-Company-Id', (string) $companyA)
+            ->getJson("/api/v1/inventory/stock/movements?product_unit_id={$productUnitId}&branch_id={$branchA}")
+            ->json('data.movements.0.id');
+
+        $this->withToken($tokenB)->withHeader('X-Company-Id', (string) $companyB)
+            ->getJson("/api/v1/inventory/stock/movements/{$movementId}")
+            ->assertForbidden();
+    });
+
     it('returns on-hand per variant and branch', function (): void {
         [, $token, $companyId, $branchId] = inventoryActor();
         $uom = createUnit($token, $companyId, 'pcs');

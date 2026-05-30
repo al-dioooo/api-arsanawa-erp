@@ -23,6 +23,7 @@ use App\Modules\Inventory\Actions\DeleteUnitOfMeasure;
 use App\Modules\Inventory\Actions\DeleteVariant;
 use App\Modules\Inventory\Actions\DeleteVariantGroup;
 use App\Modules\Inventory\Actions\GetProduct;
+use App\Modules\Inventory\Actions\GetStockMovement;
 use App\Modules\Inventory\Actions\GetStockValuation;
 use App\Modules\Inventory\Actions\ListBrands;
 use App\Modules\Inventory\Actions\ListCategories;
@@ -593,7 +594,7 @@ class InventoryController extends Controller
         $lot = $action->execute($companyId, $request->user(), $request->validated());
 
         return $this->success(
-            ['lot' => new StockLotResource($lot)],
+            ['lot' => new StockLotResource($lot->load(['productUnit.product', 'productUnit.variants.group']))],
             __('Stock receipt recorded.'),
             201,
         );
@@ -629,8 +630,10 @@ class InventoryController extends Controller
 
     public function stockLevels(StockQueryRequest $request, ListStockLevels $action): JsonResponse
     {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
         return $this->success(
-            $action->execute($request->validated()),
+            $action->execute($companyId, $request->validated()),
             __('Stock levels retrieved.'),
         );
     }
@@ -661,6 +664,16 @@ class InventoryController extends Controller
                 ],
             ],
             __('Stock movements retrieved.'),
+        );
+    }
+
+    public function stockMovement(StockQueryRequest $request, GetStockMovement $action, int $movement): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        return $this->success(
+            ['movement' => new StockMovementResource($action->execute($companyId, $movement))],
+            __('Stock movement retrieved.'),
         );
     }
 

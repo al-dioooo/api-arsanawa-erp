@@ -18,6 +18,7 @@ class StockTransferResource extends JsonResource
             'notes' => $this->notes,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => [
                 'product_variant_id' => $item->product_variant_id,
+                'product_unit_id' => $item->product_unit_id,
                 'quantity' => $item->quantity,
             ])),
         ];

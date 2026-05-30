@@ -24,11 +24,17 @@ class ListStockLots
             $query->where('product_variant_id', (int) $params['product_variant_id']);
         }
 
+        if (isset($params['product_unit_id'])) {
+            $query->where('product_unit_id', (int) $params['product_unit_id']);
+        }
+
         if (isset($params['expiring_before'])) {
             $query->whereNotNull('expiry_date')
                 ->where('expiry_date', '<=', $params['expiring_before']);
         }
 
-        return $query->orderBy('received_at')->get();
+        return $query->with(['productUnit.product', 'productUnit.variants.group'])
+            ->orderBy('received_at')
+            ->get();
     }
 }

@@ -8,6 +8,87 @@ beforeEach(function (): void {
 });
 
 describe('Inventory stock issues and adjustments', function () {
+    it('issues and adjusts stock by product unit sellable SKU', function (): void {
+        [, $token, $companyId, $branchId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Snack Box',
+            'base_uom_id' => $uom,
+        ]);
+        $productUnitId = createProductUnit($token, $companyId, $productId, 'SKL-SNB-REG');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 12,
+                'unit_cost' => 18000,
+            ])->assertCreated();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/issues', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 3,
+                'notes' => 'Kitchen usage',
+            ])->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/adjustments', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchId,
+                'quantity' => -2,
+                'notes' => 'Stock count correction',
+            ])->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/levels?product_unit_id={$productUnitId}&branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.on_hand', '7.0000');
+
+        $this->assertDatabaseHas('stock_movements', [
+            'product_unit_id' => $productUnitId,
+            'branch_id' => $branchId,
+            'type' => 'issue',
+            'quantity' => '-3.0000',
+        ]);
+    });
+
+    it('rejects product unit over-issue without changing stock', function (): void {
+        [, $token, $companyId, $branchId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Bottled Water',
+            'base_uom_id' => $uom,
+        ]);
+        $productUnitId = createProductUnit($token, $companyId, $productId, 'SKL-AIR-600');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 4,
+                'unit_cost' => 2500,
+            ])->assertCreated();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/issues', [
+                'product_unit_id' => $productUnitId,
+                'branch_id' => $branchId,
+                'quantity' => 5,
+            ])->assertUnprocessable();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/levels?product_unit_id={$productUnitId}&branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.on_hand', '4.0000');
+    });
+
     it('issues stock FIFO across multiple lots', function (): void {
         [, $token, $companyId, $branchId] = inventoryActor();
         $uom = createUnit($token, $companyId, 'pcs');

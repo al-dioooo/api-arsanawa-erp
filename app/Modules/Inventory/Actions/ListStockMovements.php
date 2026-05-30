@@ -14,7 +14,7 @@ class ListStockMovements
     {
         $query = StockMovement::query()
             ->where('company_id', $companyId)
-            ->with('variant');
+            ->with(['variant', 'productUnit.product', 'productUnit.variants.group']);
 
         if (isset($params['branch_id'])) {
             $query->where('branch_id', (int) $params['branch_id']);
@@ -22,6 +22,10 @@ class ListStockMovements
 
         if (isset($params['product_variant_id'])) {
             $query->where('product_variant_id', (int) $params['product_variant_id']);
+        }
+
+        if (isset($params['product_unit_id'])) {
+            $query->where('product_unit_id', (int) $params['product_unit_id']);
         }
 
         return $query->orderByDesc('occurred_at')

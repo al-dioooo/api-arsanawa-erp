@@ -20,6 +20,7 @@ class StockService
                 'company_id' => $data['company_id'],
                 'branch_id' => $data['branch_id'],
                 'product_variant_id' => $data['product_variant_id'],
+                'product_unit_id' => $data['product_unit_id'] ?? null,
                 'lot_number' => $data['lot_number'] ?? null,
                 'received_quantity' => $data['quantity'],
                 'remaining_quantity' => $data['quantity'],
@@ -35,6 +36,7 @@ class StockService
                 'company_id' => $data['company_id'],
                 'branch_id' => $data['branch_id'],
                 'product_variant_id' => $data['product_variant_id'],
+                'product_unit_id' => $data['product_unit_id'] ?? null,
                 'stock_lot_id' => $lot->id,
                 'type' => 'receipt',
                 'quantity' => $data['quantity'],
@@ -59,7 +61,9 @@ class StockService
     {
         DB::transaction(function () use ($data): void {
             $remaining = (float) $data['quantity'];
-            $onHand = $this->onHand($data['product_variant_id'], $data['branch_id']);
+            $onHand = isset($data['product_unit_id'])
+                ? $this->onHandForProductUnit((int) $data['product_unit_id'], $data['branch_id'])
+                : $this->onHand($data['product_variant_id'], $data['branch_id']);
 
             if (bccomp((string) $onHand, (string) $remaining, 4) < 0) {
                 throw ValidationException::withMessages([
@@ -72,6 +76,7 @@ class StockService
                 ->where('branch_id', $data['branch_id'])
                 ->where('status', 'active')
                 ->where('remaining_quantity', '>', 0)
+                ->when(isset($data['product_unit_id']), fn ($query) => $query->where('product_unit_id', (int) $data['product_unit_id']))
                 ->orderBy('received_at')
                 ->orderBy('id')
                 ->lockForUpdate()
@@ -95,6 +100,7 @@ class StockService
                     'company_id' => $data['company_id'],
                     'branch_id' => $data['branch_id'],
                     'product_variant_id' => $data['product_variant_id'],
+                    'product_unit_id' => $data['product_unit_id'] ?? null,
                     'stock_lot_id' => $lot->id,
                     'type' => 'issue',
                     'quantity' => -$consume,
@@ -153,12 +159,15 @@ class StockService
             foreach ($data['items'] as $item) {
                 $transfer->items()->create([
                     'product_variant_id' => $item['product_variant_id'],
+                    'product_unit_id' => $item['product_unit_id'] ?? null,
                     'quantity' => $item['quantity'],
                 ]);
 
                 // FIFO-consume at the source branch
                 $remaining = (float) $item['quantity'];
-                $onHand = $this->onHand($item['product_variant_id'], $data['from_branch_id']);
+                $onHand = isset($item['product_unit_id'])
+                    ? $this->onHandForProductUnit((int) $item['product_unit_id'], $data['from_branch_id'])
+                    : $this->onHand($item['product_variant_id'], $data['from_branch_id']);
 
                 if (bccomp((string) $onHand, (string) $remaining, 4) < 0) {
                     throw ValidationException::withMessages([
@@ -171,6 +180,7 @@ class StockService
                     ->where('branch_id', $data['from_branch_id'])
                     ->where('status', 'active')
                     ->where('remaining_quantity', '>', 0)
+                    ->when(isset($item['product_unit_id']), fn ($query) => $query->where('product_unit_id', (int) $item['product_unit_id']))
                     ->orderBy('received_at')
                     ->orderBy('id')
                     ->lockForUpdate()
@@ -195,6 +205,7 @@ class StockService
                         'company_id' => $data['company_id'],
                         'branch_id' => $data['from_branch_id'],
                         'product_variant_id' => $item['product_variant_id'],
+                        'product_unit_id' => $item['product_unit_id'] ?? null,
                         'stock_lot_id' => $lot->id,
                         'type' => 'transfer_out',
                         'quantity' => -$consume,
@@ -210,6 +221,7 @@ class StockService
                         'company_id' => $data['company_id'],
                         'branch_id' => $data['to_branch_id'],
                         'product_variant_id' => $item['product_variant_id'],
+                        'product_unit_id' => $item['product_unit_id'] ?? null,
                         'lot_number' => $lot->lot_number,
                         'received_quantity' => $consume,
                         'remaining_quantity' => $consume,
@@ -226,6 +238,7 @@ class StockService
                         'company_id' => $data['company_id'],
                         'branch_id' => $data['to_branch_id'],
                         'product_variant_id' => $item['product_variant_id'],
+                        'product_unit_id' => $item['product_unit_id'] ?? null,
                         'stock_lot_id' => $destLot->id,
                         'type' => 'transfer_in',
                         'quantity' => $consume,
@@ -253,7 +266,16 @@ class StockService
             ->sum('remaining_quantity');
     }
 
-    public function valuation(int $companyId, ?int $branchId = null): float
+    public function onHandForProductUnit(int $productUnitId, int $branchId): float
+    {
+        return (float) StockLot::query()
+            ->where('product_unit_id', $productUnitId)
+            ->where('branch_id', $branchId)
+            ->where('status', 'active')
+            ->sum('remaining_quantity');
+    }
+
+    public function valuation(int $companyId, ?int $branchId = null, ?int $productUnitId = null): float
     {
         $query = StockLot::query()
             ->where('company_id', $companyId)
@@ -261,6 +283,10 @@ class StockService
 
         if ($branchId !== null) {
             $query->where('branch_id', $branchId);
+        }
+
+        if ($productUnitId !== null) {
+            $query->where('product_unit_id', $productUnitId);
         }
 
         return (float) $query->selectRaw('SUM(remaining_quantity * unit_cost) as total')

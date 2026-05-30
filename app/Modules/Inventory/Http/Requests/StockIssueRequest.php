@@ -23,8 +23,13 @@ class StockIssueRequest extends FormRequest
         $companyId = $this->activeCompanyId();
 
         return [
+            'product_unit_id' => [
+                'required_without:product_variant_id',
+                'integer',
+                Rule::exists('product_units', 'id')->where('company_id', $companyId),
+            ],
             'product_variant_id' => [
-                'required',
+                'required_without:product_unit_id',
                 'integer',
                 Rule::exists('product_variants', 'id')->where('company_id', $companyId),
             ],

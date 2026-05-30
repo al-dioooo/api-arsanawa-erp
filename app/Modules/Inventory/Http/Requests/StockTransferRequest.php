@@ -35,8 +35,13 @@ class StockTransferRequest extends FormRequest
                 Rule::exists('branches', 'id')->where('company_id', $companyId),
             ],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.product_unit_id' => [
+                'required_without:items.*.product_variant_id',
+                'integer',
+                Rule::exists('product_units', 'id')->where('company_id', $companyId),
+            ],
             'items.*.product_variant_id' => [
-                'required',
+                'required_without:items.*.product_unit_id',
                 'integer',
                 Rule::exists('product_variants', 'id')->where('company_id', $companyId),
             ],
