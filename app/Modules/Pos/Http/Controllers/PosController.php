@@ -13,6 +13,7 @@ use App\Modules\Pos\Actions\CreateRegister;
 use App\Modules\Pos\Actions\CreateSale;
 use App\Modules\Pos\Actions\DeleteRegister;
 use App\Modules\Pos\Actions\GetCurrentShift;
+use App\Modules\Pos\Actions\GetPosDashboardSummary;
 use App\Modules\Pos\Actions\GetSalesReport;
 use App\Modules\Pos\Actions\GetShiftReport;
 use App\Modules\Pos\Actions\ListRegisters;
@@ -37,6 +38,7 @@ use App\Modules\Pos\Http\Requests\ListSalesRequest;
 use App\Modules\Pos\Http\Requests\ListShiftsRequest;
 use App\Modules\Pos\Http\Requests\OpenShiftRequest;
 use App\Modules\Pos\Http\Requests\RemoveSalePaymentRequest;
+use App\Modules\Pos\Http\Requests\ShowPosDashboardRequest;
 use App\Modules\Pos\Http\Requests\StoreRegisterRequest;
 use App\Modules\Pos\Http\Requests\StoreSaleRequest;
 use App\Modules\Pos\Http\Requests\UpdateRegisterRequest;
@@ -54,6 +56,14 @@ use Illuminate\Http\Request;
 
 class PosController extends Controller
 {
+    public function dashboard(ShowPosDashboardRequest $request, GetPosDashboardSummary $action): JsonResponse
+    {
+        return $this->success(
+            $action->execute((int) $request->attributes->get('active_company_id')),
+            __('POS dashboard retrieved.'),
+        );
+    }
+
     public function sales(ListSalesRequest $request, ListSales $action): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');

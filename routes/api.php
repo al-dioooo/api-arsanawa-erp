@@ -125,6 +125,8 @@ Route::middleware(['auth:api', 'organization.company-context'])
     ->prefix('v1/inventory')
     ->name('api.v1.inventory.')
     ->group(function (): void {
+        Route::get('dashboard', [InventoryController::class, 'dashboard'])->name('dashboard.show');
+
         Route::get('categories', [InventoryController::class, 'categories'])->name('categories.index');
         Route::post('categories', [InventoryController::class, 'storeCategory'])->name('categories.store');
         Route::get('categories/{category}', [InventoryController::class, 'showCategory'])->name('categories.show');
@@ -205,6 +207,8 @@ Route::middleware(['auth:api', 'organization.company-context'])
     ->prefix('v1/finance')
     ->name('api.v1.finance.')
     ->group(function (): void {
+        Route::get('dashboard', [FinanceController::class, 'dashboard'])->name('dashboard.show');
+
         // Accounts
         Route::get('accounts', [FinanceController::class, 'accounts'])->name('accounts.index');
         Route::post('accounts', [FinanceController::class, 'storeAccount'])->name('accounts.store');
@@ -288,6 +292,8 @@ Route::middleware(['auth:api', 'organization.company-context'])
     ->prefix('v1/pos')
     ->name('api.v1.pos.')
     ->group(function (): void {
+        Route::get('dashboard', [PosController::class, 'dashboard'])->name('dashboard.show');
+
         Route::get('sales', [PosController::class, 'sales'])->name('sales.index');
         Route::post('sales', [PosController::class, 'storeSale'])->name('sales.store');
         Route::get('sales/{sale}', [PosController::class, 'showSale'])->name('sales.show');

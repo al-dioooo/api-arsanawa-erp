@@ -17,6 +17,7 @@ use App\Modules\Finance\Actions\DeleteApprovalMatrix;
 use App\Modules\Finance\Actions\DeleteTaxRate;
 use App\Modules\Finance\Actions\DeleteTaxReturn;
 use App\Modules\Finance\Actions\FinalizeTaxReturn;
+use App\Modules\Finance\Actions\GetFinanceDashboardSummary;
 use App\Modules\Finance\Actions\GenerateTaxReturn;
 use App\Modules\Finance\Actions\GetAccountLedger;
 use App\Modules\Finance\Actions\GetTaxReturn;
@@ -80,6 +81,7 @@ use App\Modules\Finance\Http\Requests\PostBillRequest;
 use App\Modules\Finance\Http\Requests\PostInvoiceRequest;
 use App\Modules\Finance\Http\Requests\PostJournalEntryRequest;
 use App\Modules\Finance\Http\Requests\PostPaymentRequest;
+use App\Modules\Finance\Http\Requests\ShowFinanceDashboardRequest;
 use App\Modules\Finance\Http\Requests\SubmitApprovalRequest;
 use App\Modules\Finance\Http\Requests\UpdateAccountRequest;
 use App\Modules\Finance\Http\Requests\UpdateApprovalMatrixRequest;
@@ -119,6 +121,14 @@ use Illuminate\Http\Request;
 
 class FinanceController extends Controller
 {
+    public function dashboard(ShowFinanceDashboardRequest $request, GetFinanceDashboardSummary $action): JsonResponse
+    {
+        return $this->success(
+            $action->execute((int) $request->attributes->get('active_company_id')),
+            __('Finance dashboard retrieved.'),
+        );
+    }
+
     // --- Chart of Accounts ------------------------------------------------
 
     public function accounts(ListAccountsRequest $request, ListAccounts $action): JsonResponse

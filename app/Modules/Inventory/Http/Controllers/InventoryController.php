@@ -22,6 +22,7 @@ use App\Modules\Inventory\Actions\DeleteReward;
 use App\Modules\Inventory\Actions\DeleteUnitOfMeasure;
 use App\Modules\Inventory\Actions\DeleteVariant;
 use App\Modules\Inventory\Actions\DeleteVariantGroup;
+use App\Modules\Inventory\Actions\GetInventoryDashboardSummary;
 use App\Modules\Inventory\Actions\GetProduct;
 use App\Modules\Inventory\Actions\GetStockMovement;
 use App\Modules\Inventory\Actions\GetStockValuation;
@@ -85,6 +86,7 @@ use App\Modules\Inventory\Http\Requests\ListVariantsRequest;
 use App\Modules\Inventory\Http\Requests\MoveCategoryRequest;
 use App\Modules\Inventory\Http\Requests\SetAvailabilityRequest;
 use App\Modules\Inventory\Http\Requests\SetPriceRequest;
+use App\Modules\Inventory\Http\Requests\ShowInventoryDashboardRequest;
 use App\Modules\Inventory\Http\Requests\StockAdjustmentRequest;
 use App\Modules\Inventory\Http\Requests\StockIssueRequest;
 use App\Modules\Inventory\Http\Requests\StockQueryRequest;
@@ -129,6 +131,14 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
+    public function dashboard(ShowInventoryDashboardRequest $request, GetInventoryDashboardSummary $action): JsonResponse
+    {
+        return $this->success(
+            $action->execute((int) $request->attributes->get('active_company_id')),
+            __('Inventory dashboard retrieved.'),
+        );
+    }
+
     // --- Categories -------------------------------------------------------
 
     public function categories(ListCategoriesRequest $request, ListCategories $action): JsonResponse

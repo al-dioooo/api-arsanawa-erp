@@ -172,6 +172,31 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/finance/dashboard:
+    get:
+      operationId: finance_dashboard_show
+      tags:
+        - Finance
+      summary: api.v1.finance.dashboard.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/finance/account-mappings:
     get:
       operationId: finance_account_mappings_index
@@ -2161,6 +2186,31 @@ paths:
           schema:
             type: integer
           description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  /api/v1/inventory/dashboard:
+    get:
+      operationId: inventory_dashboard_show
+      tags:
+        - Inventory
+      summary: api.v1.inventory.dashboard.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
       responses:
         200:
           $ref: '#/components/responses/Success'
@@ -5005,6 +5055,31 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/pos/dashboard:
+    get:
+      operationId: pos_dashboard_show
+      tags:
+        - Pos
+      summary: api.v1.pos.dashboard.show
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/pos/registers:
     get:
       operationId: pos_registers_index
