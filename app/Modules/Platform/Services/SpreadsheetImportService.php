@@ -7,6 +7,7 @@ use App\Modules\Organization\Models\Company;
 use App\Modules\Platform\Jobs\CommitSpreadsheetImport;
 use App\Modules\Platform\Models\ImportBatch;
 use App\Modules\Platform\Models\ImportRow;
+use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -314,7 +315,17 @@ class SpreadsheetImportService
             throw ValidationException::withMessages(['source_url' => [__('Only public Google Sheets links are supported.')]]);
         }
 
-        $response = Http::timeout(15)->get($sourceUrl);
+        $response = $this->downloadRemoteSource($sourceUrl);
+
+        if (! $response->successful()) {
+            foreach ($this->fallbackGoogleSheetsExportUrls($sourceUrl) as $fallbackUrl) {
+                $response = $this->downloadRemoteSource($fallbackUrl);
+
+                if ($response->successful()) {
+                    break;
+                }
+            }
+        }
 
         if (! $response->successful()) {
             throw ValidationException::withMessages(['source_url' => [__('Unable to download the Google Sheets export.')]]);
@@ -328,6 +339,35 @@ class SpreadsheetImportService
             'original_name' => 'google-sheet.csv',
             'mime_type' => $response->header('Content-Type'),
         ];
+    }
+
+    private function downloadRemoteSource(string $sourceUrl): HttpResponse
+    {
+        return Http::timeout(15)->get($sourceUrl);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function fallbackGoogleSheetsExportUrls(string $sourceUrl): array
+    {
+        $parts = parse_url($sourceUrl);
+        parse_str((string) ($parts['query'] ?? ''), $query);
+
+        if (($query['gid'] ?? null) !== '0') {
+            return [];
+        }
+
+        unset($query['gid']);
+
+        $fallbackUrl = ($parts['scheme'] ?? 'https').'://'.($parts['host'] ?? '').($parts['path'] ?? '');
+        $fallbackQuery = http_build_query($query);
+
+        if ($fallbackQuery !== '') {
+            $fallbackUrl .= '?'.$fallbackQuery;
+        }
+
+        return $fallbackUrl === $sourceUrl ? [] : [$fallbackUrl];
     }
 
     /**
