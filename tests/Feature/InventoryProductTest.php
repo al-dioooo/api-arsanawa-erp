@@ -39,6 +39,33 @@ describe('Inventory products', function () {
         $this->assertDatabaseHas('product_variants', ['sku' => 'NSG-L', 'company_id' => $companyId]);
     });
 
+    it('only allows assigning products to leaf categories', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $parent = createCategory($token, $companyId, 'Catering');
+        $leaf = createCategory($token, $companyId, 'Nasi Box', $parent);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/inventory/products', [
+                'name' => 'Parent Category Product',
+                'base_uom_id' => $uom,
+                'category_id' => $parent,
+                'variants' => [['sku' => 'PARENT-CAT-1']],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['category_id']);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/inventory/products', [
+                'name' => 'Leaf Category Product',
+                'base_uom_id' => $uom,
+                'category_id' => $leaf,
+                'variants' => [['sku' => 'LEAF-CAT-1']],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.product.category_id', $leaf);
+    });
+
     it('lists products with filter and search', function (): void {
         [, $token, $companyId] = inventoryActor();
         $uom = createUnit($token, $companyId, 'pcs');
@@ -93,6 +120,28 @@ describe('Inventory products', function () {
 
         $this->assertDatabaseMissing('products', ['id' => $productId]);
         $this->assertDatabaseMissing('product_variants', ['product_id' => $productId]);
+    });
+
+    it('only allows updating products to leaf categories', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $parent = createCategory($token, $companyId, 'Meals');
+        $leaf = createCategory($token, $companyId, 'Boxed Meals', $parent);
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Menu Set',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'MENU-SET-1']],
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->patchJson("/api/v1/inventory/products/{$productId}", ['category_id' => $parent])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['category_id']);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->patchJson("/api/v1/inventory/products/{$productId}", ['category_id' => $leaf])
+            ->assertSuccessful()
+            ->assertJsonPath('data.product.category_id', $leaf);
     });
 
     it('returns 404 for a product belonging to another company', function (): void {

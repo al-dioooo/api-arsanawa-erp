@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Inventory\Models\Category;
 use App\Modules\Inventory\Models\Price;
 use App\Modules\Inventory\Models\PriceList;
 use App\Modules\Inventory\Models\ProductUnit;
@@ -283,6 +284,78 @@ describe('Inventory product spreadsheet imports', function (): void {
             'production_date' => '2026-05-31',
             'remaining_quantity' => '12.0000',
         ]);
+    });
+
+    it('rejects inventory imports when category_path resolves to an existing parent category', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $parent = createCategory($token, $companyId, 'Catering');
+        createCategory($token, $companyId, 'Nasi Box', $parent);
+
+        $csv = importCsv([
+            'product_name',
+            'category_path',
+            'base_uom_code',
+            'sku',
+            'product_unit_name',
+        ], [
+            ['Parent Category Menu', 'Catering', 'BOX', 'PARENT-IMPORT-1', 'Parent Category Menu'],
+        ]);
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/inventory/products/imports/inspect', [
+                'file' => spreadsheetUpload('parent-category-products.csv', $csv),
+            ])
+            ->assertCreated()
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/inventory/products/imports/{$importId}/preview", [
+                'sheet_name' => 'parent-category-products.csv',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.error_count', 1)
+            ->assertJsonPath('data.rows.0.errors.category_path.0', 'Products can only be assigned to the lowest category level.');
+    });
+
+    it('accepts inventory imports for existing leaf and new final leaf category paths', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $parent = createCategory($token, $companyId, 'Catering');
+        createCategory($token, $companyId, 'Nasi Box', $parent);
+
+        $csv = importCsv([
+            'product_name',
+            'category_path',
+            'base_uom_code',
+            'sku',
+            'product_unit_name',
+        ], [
+            ['Existing Leaf Menu', 'Catering>Nasi Box', 'BOX', 'LEAF-IMPORT-1', 'Existing Leaf Menu'],
+            ['New Leaf Menu', 'Catering>Snack Box', 'BOX', 'LEAF-IMPORT-2', 'New Leaf Menu'],
+        ]);
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/inventory/products/imports/inspect', [
+                'file' => spreadsheetUpload('leaf-category-products.csv', $csv),
+            ])
+            ->assertCreated()
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/inventory/products/imports/{$importId}/preview", [
+                'sheet_name' => 'leaf-category-products.csv',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.error_count', 0);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/inventory/products/imports/{$importId}/commit")
+            ->assertAccepted()
+            ->assertJsonPath('data.import.status', 'completed');
+
+        expect(Category::query()
+            ->where('company_id', $companyId)
+            ->where('name', 'Snack Box')
+            ->exists())->toBeTrue();
     });
 
     it('blocks inventory imports above the 1000 row limit', function (): void {

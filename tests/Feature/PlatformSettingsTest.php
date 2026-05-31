@@ -5,6 +5,7 @@ use App\Modules\Organization\Models\Branch;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
 use App\Modules\Platform\Services\SettingsManager;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -113,6 +114,19 @@ describe('Platform settings', function () {
 
         expect($manager->get($company->id, 'inventory', 'low_stock_threshold', null, $branch->id))->toBe(3);
         expect($manager->get($company->id, 'inventory', 'low_stock_threshold'))->toBe(10);
+    });
+
+    it('recovers from stale serialized settings cache entries', function (): void {
+        [, $company] = makeSettingsActor();
+
+        app(SettingsManager::class)->set($company->id, 'inventory', 'discounts_enabled', false);
+
+        Cache::forever(
+            "platform.settings.{$company->id}.inventory",
+            unserialize('O:31:"Missing\\Cached\\SettingsSnapshot":0:{}'),
+        );
+
+        expect(app(SettingsManager::class)->get($company->id, 'inventory', 'discounts_enabled', true))->toBeFalse();
     });
 
     it('denies users without platform.manage-settings', function (): void {

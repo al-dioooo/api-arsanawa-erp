@@ -3,12 +3,14 @@
 namespace App\Modules\Inventory\Http\Requests;
 
 use App\Modules\Inventory\Http\Requests\Concerns\AuthorizesInventoryRequests;
+use App\Modules\Inventory\Http\Requests\Concerns\ValidatesLeafProductCategory;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class CreateProductRequest extends FormRequest
 {
     use AuthorizesInventoryRequests;
+    use ValidatesLeafProductCategory;
 
     public function authorize(): bool
     {
@@ -35,6 +37,7 @@ class CreateProductRequest extends FormRequest
                 'nullable',
                 'integer',
                 Rule::exists('categories', 'id')->where('company_id', $companyId),
+                $this->leafProductCategoryRule($companyId),
             ],
             'brand_id' => [
                 'sometimes',

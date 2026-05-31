@@ -743,8 +743,6 @@ class InventoryController extends Controller
 
     public function priceLists(ListProductsRequest $request): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $lists = PriceList::where('company_id', $companyId)->get();
 
@@ -756,8 +754,6 @@ class InventoryController extends Controller
 
     public function storePriceList(CreatePriceListRequest $request, CreatePriceList $action): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $priceList = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -770,8 +766,6 @@ class InventoryController extends Controller
 
     public function setPrice(SetPriceRequest $request, SetPrice $action, int $priceList): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = PriceList::where('company_id', $companyId)->findOrFail($priceList);
         $price = $action->execute($resolved, $request->user(), $request->validated());
@@ -784,8 +778,6 @@ class InventoryController extends Controller
 
     public function resolvePrice(StockQueryRequest $request, ResolvePrice $action, int $product, int $variant): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $resolved = $this->resolveProduct($request, $product);
         $resolvedVariant = $this->resolveVariant($resolved, $variant);
 
@@ -799,8 +791,6 @@ class InventoryController extends Controller
 
     public function discounts(ListDiscountsRequest $request): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $discounts = Discount::where('company_id', $companyId)
             ->with(['targets', 'dependencies', 'giveaways'])
@@ -814,8 +804,6 @@ class InventoryController extends Controller
 
     public function showDiscount(ListDiscountsRequest $request, int $discount): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = Discount::where('company_id', $companyId)
             ->with(['targets', 'dependencies', 'giveaways'])
@@ -829,8 +817,6 @@ class InventoryController extends Controller
 
     public function storeDiscount(CreateDiscountRequest $request, CreateDiscount $action): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $discount = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -843,8 +829,6 @@ class InventoryController extends Controller
 
     public function destroyDiscount(DeleteDiscountRequest $request, DeleteDiscount $action, int $discount): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = Discount::where('company_id', $companyId)->findOrFail($discount);
         $action->execute($resolved);
@@ -856,8 +840,6 @@ class InventoryController extends Controller
 
     public function rewards(ListRewardsRequest $request): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $rewards = Reward::where('company_id', $companyId)
             ->with('targets')
@@ -871,8 +853,6 @@ class InventoryController extends Controller
 
     public function storeReward(CreateRewardRequest $request, CreateReward $action): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $reward = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -885,8 +865,6 @@ class InventoryController extends Controller
 
     public function destroyReward(DeleteRewardRequest $request, DeleteReward $action, int $reward): JsonResponse
     {
-        $this->abortIfInventoryRestricted($request);
-
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = Reward::where('company_id', $companyId)->findOrFail($reward);
         $action->execute($resolved);

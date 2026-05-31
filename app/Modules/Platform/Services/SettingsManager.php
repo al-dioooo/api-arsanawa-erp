@@ -74,13 +74,29 @@ class SettingsManager
      */
     private function rows(int $companyId, string $module): Collection
     {
-        return Cache::rememberForever(
-            $this->cacheKey($companyId, $module),
-            fn (): Collection => Setting::query()
-                ->where('company_id', $companyId)
-                ->where('module', $module)
-                ->get(),
-        );
+        $cacheKey = $this->cacheKey($companyId, $module);
+        $cached = Cache::get($cacheKey);
+
+        if ($this->isValidSettingsCollection($cached)) {
+            return $cached;
+        }
+
+        Cache::forget($cacheKey);
+
+        $rows = Setting::query()
+            ->where('company_id', $companyId)
+            ->where('module', $module)
+            ->get();
+
+        Cache::forever($cacheKey, $rows);
+
+        return $rows;
+    }
+
+    private function isValidSettingsCollection(mixed $value): bool
+    {
+        return $value instanceof Collection
+            && $value->every(fn (mixed $row): bool => $row instanceof Setting);
     }
 
     private function forget(int $companyId, string $module): void

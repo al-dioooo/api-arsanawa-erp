@@ -43,6 +43,14 @@ class InventoryProductImportProcessor
             $errors['currency_code'][] = __('Currency code was not found.');
         }
 
+        if (($row['category_path'] ?? '') !== '') {
+            $category = $this->existingCategoryPath($companyId, (string) $row['category_path']);
+
+            if ($category !== null && Category::query()->forCompany($companyId)->where('parent_id', $category->id)->exists()) {
+                $errors['category_path'][] = __('Products can only be assigned to the lowest category level.');
+            }
+        }
+
         return $errors;
     }
 
@@ -185,6 +193,28 @@ class InventoryProductImportProcessor
         }
 
         return $parent;
+    }
+
+    private function existingCategoryPath(int $companyId, string $path): ?Category
+    {
+        $parent = null;
+        $category = null;
+
+        foreach (array_filter(array_map('trim', explode('>', $path))) as $name) {
+            $category = Category::query()
+                ->where('company_id', $companyId)
+                ->where('parent_id', $parent?->id)
+                ->where('name', $name)
+                ->first();
+
+            if ($category === null) {
+                return null;
+            }
+
+            $parent = $category;
+        }
+
+        return $category;
     }
 
     /**

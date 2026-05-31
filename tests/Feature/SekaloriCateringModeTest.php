@@ -88,7 +88,7 @@ describe('SEKALORI catering-only configuration', function (): void {
             ->assertJsonPath('data.sale.status', 'confirmed');
     });
 
-    it('blocks register, shift, payment, report, promotion, pricing, transfer, and issue endpoints in catering-only mode', function (): void {
+    it('blocks register, shift, payment, report, transfer, and issue endpoints but allows pricing and promotion masters in catering-only mode', function (): void {
         [, $token, $companyId, $branchId] = inventoryActor();
         enableCateringOnlyMode($companyId);
         $variantId = cateringModeVariant($token, $companyId, 'CAT-MODE-2');
@@ -130,11 +130,15 @@ describe('SEKALORI catering-only configuration', function (): void {
 
         $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
             ->getJson('/api/v1/inventory/discounts')
-            ->assertForbidden();
+            ->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/inventory/rewards')
+            ->assertSuccessful();
 
         $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
             ->getJson('/api/v1/inventory/price-lists')
-            ->assertForbidden();
+            ->assertSuccessful();
 
         $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
             ->postJson('/api/v1/inventory/stock/issues', [
