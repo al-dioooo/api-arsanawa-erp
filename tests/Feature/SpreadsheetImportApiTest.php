@@ -217,6 +217,56 @@ describe('POS catering spreadsheet imports', function (): void {
             ->assertJsonPath('data.rows.0.errors.menu_type.0', 'Menu type is not configured.');
     });
 
+    it('previews SEKALORI Google Form rows from the generic source inspection flow', function (): void {
+        $this->seed(DatabaseSeeder::class);
+
+        $company = Company::query()->where('slug', 'sekalori')->firstOrFail();
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => 'owner@sekalori.test',
+            'password' => 'sekalori1234',
+        ])->assertSuccessful()->json('data.access_token');
+
+        Http::fake([
+            'docs.google.com/*' => Http::response(importCsv([
+                'Timestamp',
+                'Nama Lengkap',
+                'Nomor WhatsApp',
+                'Alamat Pengiriman',
+                'Jenis Menu',
+                'Batch Pengiriman',
+                'Metode Pembayaran',
+                'Bukti Transfer',
+                'Catatan',
+            ], [
+                ['5/31/2026 21:33:53', 'Aldio Lisafron', '6285173075151', 'Buitenzorg City C/4, RT 12/14, Pagelaran 16610', 'Japanese', 'Batch 1 (09:00-11:00)', 'Transfer Bank', 'https://drive.google.test/proof-2', ''],
+            ]), 200, ['Content-Type' => 'text/csv']),
+        ]);
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $company->id)
+            ->postJson('/api/v1/pos/sales/imports/inspect', [
+                'source_url' => 'https://docs.google.com/spreadsheets/d/sekalori/export?format=csv',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.sheets.0.supported', true)
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $company->id)
+            ->postJson("/api/v1/pos/sales/imports/{$importId}/preview", [
+                'sheet_name' => 'google-sheet.csv',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.status', 'previewed')
+            ->assertJsonPath('data.import.error_count', 0)
+            ->assertJsonPath('data.rows.0.normalized.branch_code', 'MAIN')
+            ->assertJsonPath('data.rows.0.normalized.customer_name', 'Aldio Lisafron')
+            ->assertJsonPath('data.rows.0.normalized.fulfilment_date', '2026-06-01')
+            ->assertJsonPath('data.rows.0.normalized.fulfilment_time_window', 'Batch 1 (09:00-11:00)')
+            ->assertJsonPath('data.rows.0.normalized.sku', 'SKL-BND-JPN')
+            ->assertJsonPath('data.rows.0.normalized.quantity', 1)
+            ->assertJsonPath('data.rows.0.normalized.payment_method', 'transfer')
+            ->assertJsonPath('data.rows.0.normalized.payment_reference', 'https://drive.google.test/proof-2');
+    });
+
     it('retries configured SEKALORI Google Form exports without the invented default gid', function (): void {
         $this->seed(DatabaseSeeder::class);
 

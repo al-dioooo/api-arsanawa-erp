@@ -119,7 +119,7 @@ class SpreadsheetImportService
             ? $this->storeRemoteSource($sourceUrl, $companyId)
             : $this->storeUploadedSource($file, $companyId);
 
-        $sheets = $this->inspectSheets($kind, $stored['path'], $stored['original_name']);
+        $sheets = $this->inspectSheets($kind, $companyId, $stored['path'], $stored['original_name']);
 
         return ImportBatch::query()->create([
             'company_id' => $companyId,
@@ -241,8 +241,14 @@ class SpreadsheetImportService
 
         foreach ($records as $index => $record) {
             $rowNumber = $index + 2;
-            $normalized = $this->normalize($import->kind, $record);
+            [$normalized, $mappingErrors] = $this->normalizePreviewRow($import, $record);
             $errors = $this->validateRow($import->kind, $import->company_id, $normalized);
+
+            if (isset($mappingErrors['menu_type'])) {
+                unset($errors['sku']);
+            }
+
+            $errors = array_merge($errors, $mappingErrors);
 
             if ($errors !== []) {
                 $errorCount += count($errors);
@@ -373,13 +379,13 @@ class SpreadsheetImportService
     /**
      * @return list<array{name: string, supported: bool, row_count: int, reason: string|null}>
      */
-    private function inspectSheets(string $kind, string $path, string $originalName): array
+    private function inspectSheets(string $kind, int $companyId, string $path, string $originalName): array
     {
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
         if ($extension === 'csv') {
             $records = $this->readCsv($path);
-            $supported = $this->headersSupported($kind, array_keys($records->first() ?? []));
+            $supported = $this->headersSupported($kind, array_keys($records->first() ?? []), $companyId);
 
             return [[
                 'name' => $originalName,
@@ -395,7 +401,7 @@ class SpreadsheetImportService
         foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
             $headers = $this->sheetHeaders($sheet);
             $highestRow = max(0, $sheet->getHighestDataRow() - 1);
-            $supported = $this->headersSupported($kind, $headers);
+            $supported = $this->headersSupported($kind, $headers, $companyId);
             $sheets[] = [
                 'name' => $sheet->getTitle(),
                 'supported' => $supported,
@@ -501,13 +507,19 @@ class SpreadsheetImportService
     /**
      * @param  list<string>  $headers
      */
-    private function headersSupported(string $kind, array $headers): bool
+    private function headersSupported(string $kind, array $headers, ?int $companyId = null): bool
     {
         $required = $kind === self::POS_KIND
             ? ['order_reference', 'branch_code']
             : ['product_name', 'sku'];
 
-        return collect($required)->every(fn (string $header): bool => in_array($header, $headers, true));
+        if (collect($required)->every(fn (string $header): bool => in_array($header, $headers, true))) {
+            return true;
+        }
+
+        return $kind === self::POS_KIND
+            && $companyId !== null
+            && $this->configuredPosCateringHeadersSupported($companyId, $headers);
     }
 
     /**
@@ -533,6 +545,65 @@ class SpreadsheetImportService
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<string, string>  $record
+     * @return array{0: array<string, mixed>, 1: array<string, list<string>>}
+     */
+    private function normalizePreviewRow(ImportBatch $import, array $record): array
+    {
+        if ($this->shouldUseConfiguredPosCateringMapping($import->kind, $import->company_id, $record)) {
+            return $this->mapConfiguredPosCateringRow(
+                $record,
+                $this->configuredPosCateringImportConfig($import->company_id),
+            );
+        }
+
+        return [$this->normalize($import->kind, $record), []];
+    }
+
+    /**
+     * @param  array<string, string>  $record
+     */
+    private function shouldUseConfiguredPosCateringMapping(string $kind, int $companyId, array $record): bool
+    {
+        if ($kind !== self::POS_KIND || ! $this->companyIsSekalori($companyId)) {
+            return false;
+        }
+
+        try {
+            return $this->configuredRecordHasRequiredHeaders(
+                $record,
+                $this->configuredPosCateringImportConfig($companyId),
+            );
+        } catch (ValidationException) {
+            return false;
+        }
+    }
+
+    /**
+     * @param  list<string>  $headers
+     */
+    private function configuredPosCateringHeadersSupported(int $companyId, array $headers): bool
+    {
+        if (! $this->companyIsSekalori($companyId)) {
+            return false;
+        }
+
+        try {
+            return $this->configuredRecordHasRequiredHeaders(
+                array_fill_keys($headers, ''),
+                $this->configuredPosCateringImportConfig($companyId),
+            );
+        } catch (ValidationException) {
+            return false;
+        }
+    }
+
+    private function companyIsSekalori(int $companyId): bool
+    {
+        return Company::query()->whereKey($companyId)->where('slug', 'sekalori')->exists();
     }
 
     /**
@@ -615,10 +686,39 @@ class SpreadsheetImportService
      */
     private function configuredFieldValue(array $record, array $fieldMap, string $field): string
     {
-        $source = $fieldMap[$field] ?? $field;
-        $header = Str::snake((string) $source);
+        $header = $this->configuredFieldHeader($fieldMap, $field);
 
         return trim((string) ($record[$header] ?? ''));
+    }
+
+    /**
+     * @param  array<string, string>  $record
+     * @param  array<string, mixed>  $config
+     */
+    private function configuredRecordHasRequiredHeaders(array $record, array $config): bool
+    {
+        $fieldMap = is_array($config['field_map'] ?? null) ? $config['field_map'] : [];
+        $requiredFields = [
+            'timestamp',
+            'customer_name',
+            'customer_phone',
+            'delivery_address',
+            'menu_type',
+            'fulfilment_time_window',
+            'payment_method',
+        ];
+
+        return collect($requiredFields)->every(
+            fn (string $field): bool => array_key_exists($this->configuredFieldHeader($fieldMap, $field), $record),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $fieldMap
+     */
+    private function configuredFieldHeader(array $fieldMap, string $field): string
+    {
+        return Str::snake((string) ($fieldMap[$field] ?? $field));
     }
 
     private function configuredResponseDate(string $timestamp): Carbon
