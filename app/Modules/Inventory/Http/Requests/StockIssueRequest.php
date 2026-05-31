@@ -3,6 +3,7 @@
 namespace App\Modules\Inventory\Http\Requests;
 
 use App\Modules\Inventory\Http\Requests\Concerns\AuthorizesInventoryRequests;
+use App\Modules\Platform\Services\CateringMode;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,6 +13,12 @@ class StockIssueRequest extends FormRequest
 
     public function authorize(): bool
     {
+        $companyId = $this->activeCompanyId();
+
+        if ($companyId !== null && app(CateringMode::class)->inventoryRestricted($companyId)) {
+            return false;
+        }
+
         return $this->canInActiveCompany('inventory.manage-stock');
     }
 

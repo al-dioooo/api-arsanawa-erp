@@ -7,6 +7,7 @@ use App\Modules\Organization\Actions\CreateCompany;
 use App\Modules\Organization\Models\Branch;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Modules\Platform\Services\SettingsManager;
 use App\Support\PermissionCatalog;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -28,15 +29,16 @@ class DemoCompanySeeder extends Seeder
         $company = Company::query()->where('slug', 'sekalori')->first();
 
         if ($company === null) {
-            app(CreateCompany::class)->execute($owner, [
+            $created = app(CreateCompany::class)->execute($owner, [
                 'name' => 'SEKALORI Catering',
                 'slug' => 'sekalori',
                 'legal_name' => 'PT Sekalori Rasa Nusantara',
                 'primary_branch_name' => 'SEKALORI HQ',
             ]);
-
-            return;
+            $company = $created['company'];
         }
+
+        $this->seedSekaloriSettings($company, $owner);
 
         $primaryBranch = Branch::query()->firstOrCreate(
             [
@@ -74,6 +76,14 @@ class DemoCompanySeeder extends Seeder
         );
 
         $this->assignOwnerRole($owner, $company);
+    }
+
+    private function seedSekaloriSettings(Company $company, User $owner): void
+    {
+        $settings = app(SettingsManager::class);
+
+        $settings->set($company->id, 'pos', 'catering_only', true, null, $owner->id);
+        $settings->set($company->id, 'inventory', 'hide_catering_restricted_features', true, null, $owner->id);
     }
 
     private function assignOwnerRole(User $user, Company $company): void

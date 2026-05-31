@@ -34,8 +34,8 @@ use App\Modules\Inventory\Actions\ListStockLevels;
 use App\Modules\Inventory\Actions\ListStockLots;
 use App\Modules\Inventory\Actions\ListStockMovements;
 use App\Modules\Inventory\Actions\ListUnitsOfMeasure;
-use App\Modules\Inventory\Actions\ListVariants;
 use App\Modules\Inventory\Actions\ListVariantGroups;
+use App\Modules\Inventory\Actions\ListVariants;
 use App\Modules\Inventory\Actions\ManageProductTags;
 use App\Modules\Inventory\Actions\ManageVariants;
 use App\Modules\Inventory\Actions\MoveCategory;
@@ -92,6 +92,7 @@ use App\Modules\Inventory\Http\Requests\StockIssueRequest;
 use App\Modules\Inventory\Http\Requests\StockQueryRequest;
 use App\Modules\Inventory\Http\Requests\StockReceiptRequest;
 use App\Modules\Inventory\Http\Requests\StockTransferRequest;
+use App\Modules\Inventory\Http\Requests\StoreProductImageRequest;
 use App\Modules\Inventory\Http\Requests\SyncTagsRequest;
 use App\Modules\Inventory\Http\Requests\UpdateBrandRequest;
 use App\Modules\Inventory\Http\Requests\UpdateCategoryRequest;
@@ -105,6 +106,7 @@ use App\Modules\Inventory\Http\Resources\BrandResource;
 use App\Modules\Inventory\Http\Resources\CategoryResource;
 use App\Modules\Inventory\Http\Resources\DiscountResource;
 use App\Modules\Inventory\Http\Resources\PriceListResource;
+use App\Modules\Inventory\Http\Resources\ProductImageResource;
 use App\Modules\Inventory\Http\Resources\ProductResource;
 use App\Modules\Inventory\Http\Resources\ProductUnitResource;
 use App\Modules\Inventory\Http\Resources\ProductVariantResource;
@@ -126,6 +128,8 @@ use App\Modules\Inventory\Models\Reward;
 use App\Modules\Inventory\Models\UnitOfMeasure;
 use App\Modules\Inventory\Models\Variant;
 use App\Modules\Inventory\Models\VariantGroup;
+use App\Modules\Inventory\Services\ProductImageService;
+use App\Modules\Platform\Services\CateringMode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -451,7 +455,7 @@ class InventoryController extends Controller
     public function showProductUnit(ListProductUnitsRequest $request, int $productUnit): JsonResponse
     {
         return $this->success(
-            ['product_unit' => new ProductUnitResource($this->resolveProductUnit($request, $productUnit)->load(['product.category', 'product.brand', 'variants.group.unit']))],
+            ['product_unit' => new ProductUnitResource($this->resolveProductUnit($request, $productUnit)->load(['product.category', 'product.brand', 'variants.group.unit', 'images']))],
             __('Product unit retrieved.'),
         );
     }
@@ -475,6 +479,23 @@ class InventoryController extends Controller
         $action->execute($this->resolveProductUnit($request, $productUnit));
 
         return $this->success(null, __('Product unit deleted.'));
+    }
+
+    public function storeProductUnitImage(StoreProductImageRequest $request, ProductImageService $service, int $productUnit): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $image = $service->storeFor(
+            $this->resolveProductUnit($request, $productUnit),
+            $companyId,
+            $request->user(),
+            $request->validated(),
+        );
+
+        return $this->success(
+            ['image' => new ProductImageResource($image)],
+            __('Product unit image stored.'),
+            201,
+        );
     }
 
     // --- Products ---------------------------------------------------------
@@ -536,6 +557,23 @@ class InventoryController extends Controller
         $action->execute($this->resolveProduct($request, $product));
 
         return $this->success(null, __('Product deleted.'));
+    }
+
+    public function storeProductImage(StoreProductImageRequest $request, ProductImageService $service, int $product): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $image = $service->storeFor(
+            $this->resolveProduct($request, $product),
+            $companyId,
+            $request->user(),
+            $request->validated(),
+        );
+
+        return $this->success(
+            ['image' => new ProductImageResource($image)],
+            __('Product image stored.'),
+            201,
+        );
     }
 
     // --- Variants ----------------------------------------------------------
@@ -612,6 +650,8 @@ class InventoryController extends Controller
 
     public function storeIssue(StockIssueRequest $request, RecordStockIssue $action): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $action->execute($companyId, $request->user(), $request->validated());
 
@@ -628,6 +668,8 @@ class InventoryController extends Controller
 
     public function storeTransfer(StockTransferRequest $request, RecordStockTransfer $action): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $transfer = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -701,6 +743,8 @@ class InventoryController extends Controller
 
     public function priceLists(ListProductsRequest $request): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $lists = PriceList::where('company_id', $companyId)->get();
 
@@ -712,6 +756,8 @@ class InventoryController extends Controller
 
     public function storePriceList(CreatePriceListRequest $request, CreatePriceList $action): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $priceList = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -724,6 +770,8 @@ class InventoryController extends Controller
 
     public function setPrice(SetPriceRequest $request, SetPrice $action, int $priceList): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = PriceList::where('company_id', $companyId)->findOrFail($priceList);
         $price = $action->execute($resolved, $request->user(), $request->validated());
@@ -736,6 +784,8 @@ class InventoryController extends Controller
 
     public function resolvePrice(StockQueryRequest $request, ResolvePrice $action, int $product, int $variant): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $resolved = $this->resolveProduct($request, $product);
         $resolvedVariant = $this->resolveVariant($resolved, $variant);
 
@@ -749,6 +799,8 @@ class InventoryController extends Controller
 
     public function discounts(ListDiscountsRequest $request): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $discounts = Discount::where('company_id', $companyId)
             ->with(['targets', 'dependencies', 'giveaways'])
@@ -762,6 +814,8 @@ class InventoryController extends Controller
 
     public function showDiscount(ListDiscountsRequest $request, int $discount): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = Discount::where('company_id', $companyId)
             ->with(['targets', 'dependencies', 'giveaways'])
@@ -775,6 +829,8 @@ class InventoryController extends Controller
 
     public function storeDiscount(CreateDiscountRequest $request, CreateDiscount $action): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $discount = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -787,6 +843,8 @@ class InventoryController extends Controller
 
     public function destroyDiscount(DeleteDiscountRequest $request, DeleteDiscount $action, int $discount): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = Discount::where('company_id', $companyId)->findOrFail($discount);
         $action->execute($resolved);
@@ -798,6 +856,8 @@ class InventoryController extends Controller
 
     public function rewards(ListRewardsRequest $request): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $rewards = Reward::where('company_id', $companyId)
             ->with('targets')
@@ -811,6 +871,8 @@ class InventoryController extends Controller
 
     public function storeReward(CreateRewardRequest $request, CreateReward $action): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $reward = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -823,6 +885,8 @@ class InventoryController extends Controller
 
     public function destroyReward(DeleteRewardRequest $request, DeleteReward $action, int $reward): JsonResponse
     {
+        $this->abortIfInventoryRestricted($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $resolved = Reward::where('company_id', $companyId)->findOrFail($reward);
         $action->execute($resolved);
@@ -884,5 +948,14 @@ class InventoryController extends Controller
     private function resolveVariant(Product $product, int $id): ProductVariant
     {
         return $product->variants()->findOrFail($id);
+    }
+
+    private function abortIfInventoryRestricted(Request $request): void
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        if (app(CateringMode::class)->inventoryRestricted($companyId)) {
+            abort(403, __('This workflow is disabled for catering-only companies.'));
+        }
     }
 }

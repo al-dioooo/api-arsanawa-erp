@@ -2,6 +2,7 @@
 
 namespace App\Modules\Pos\Http\Requests;
 
+use App\Modules\Platform\Services\CateringMode;
 use App\Modules\Pos\Http\Requests\Concerns\AuthorizesPosRequests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,12 @@ class StoreSaleRequest extends FormRequest
     public function rules(): array
     {
         $companyId = $this->activeCompanyId();
+        $saleTypes = $companyId !== null && app(CateringMode::class)->posCateringOnly($companyId)
+            ? ['catering']
+            : ['counter', 'catering'];
 
         return [
-            'type' => ['required', 'string', Rule::in(['counter', 'catering'])],
+            'type' => ['required', 'string', Rule::in($saleTypes)],
             'branch_id' => [
                 'required',
                 'integer',

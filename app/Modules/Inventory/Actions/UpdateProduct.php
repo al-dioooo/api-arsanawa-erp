@@ -18,6 +18,6 @@ class UpdateProduct
         $product->updated_by = $user->id;
         $product->save();
 
-        return $product->load(['category', 'brand', 'baseUom', 'variants', 'tags']);
+        return $product->load(['category', 'brand', 'baseUom', 'variants', 'productUnits.images', 'images', 'tags']);
     }
 }

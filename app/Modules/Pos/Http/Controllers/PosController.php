@@ -3,6 +3,7 @@
 namespace App\Modules\Pos\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Platform\Services\CateringMode;
 use App\Modules\Pos\Actions\AddSalePayment;
 use App\Modules\Pos\Actions\ApplyPromotions;
 use App\Modules\Pos\Actions\CancelSale;
@@ -115,6 +116,8 @@ class PosController extends Controller
 
     public function addSalePayment(AddSalePaymentRequest $request, AddSalePayment $action, int $sale): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $updated = $action->execute($this->resolveSale($request, $sale), $request->user(), $request->validated());
 
         return $this->success(
@@ -126,6 +129,8 @@ class PosController extends Controller
 
     public function applyPromotions(ApplyPromotionsRequest $request, ApplyPromotions $action, int $sale): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $updated = $action->execute($this->resolveSale($request, $sale), $request->user());
 
         return $this->success(
@@ -136,6 +141,8 @@ class PosController extends Controller
 
     public function completeSale(CompleteSaleRequest $request, CompleteSale $action, int $sale): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $completed = $action->execute($this->resolveSale($request, $sale), $request->user());
 
         return $this->success(
@@ -176,6 +183,8 @@ class PosController extends Controller
 
     public function salesReport(GetSalesReportRequest $request, GetSalesReport $action): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
 
         return $this->success(
@@ -186,6 +195,8 @@ class PosController extends Controller
 
     public function shiftReport(GetShiftReportRequest $request, GetShiftReport $action, int $shift): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         return $this->success(
             $action->execute($this->resolveShift($request, $shift)),
             __('Shift report retrieved.'),
@@ -194,6 +205,8 @@ class PosController extends Controller
 
     public function removeSalePayment(RemoveSalePaymentRequest $request, RemoveSalePayment $action, int $sale, int $payment): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $resolvedSale = $this->resolveSale($request, $sale);
         $resolvedPayment = SalePayment::query()
             ->where('sale_id', $resolvedSale->id)
@@ -209,6 +222,8 @@ class PosController extends Controller
 
     public function registers(ListRegistersRequest $request, ListRegisters $action): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $registers = $action->execute($companyId, $request->validated());
 
@@ -228,6 +243,8 @@ class PosController extends Controller
 
     public function storeRegister(StoreRegisterRequest $request, CreateRegister $action): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $register = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -240,6 +257,8 @@ class PosController extends Controller
 
     public function showRegister(ListRegistersRequest $request, int $register): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         return $this->success(
             ['register' => new RegisterResource($this->resolveRegister($request, $register))],
             __('Register retrieved.'),
@@ -248,6 +267,8 @@ class PosController extends Controller
 
     public function updateRegister(UpdateRegisterRequest $request, UpdateRegister $action, int $register): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $updated = $action->execute(
             $this->resolveRegister($request, $register),
             $request->user(),
@@ -262,6 +283,8 @@ class PosController extends Controller
 
     public function destroyRegister(ListRegistersRequest $request, DeleteRegister $action, int $register): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $action->execute($this->resolveRegister($request, $register));
 
         return $this->success(null, __('Register deleted.'));
@@ -269,6 +292,8 @@ class PosController extends Controller
 
     public function shifts(ListShiftsRequest $request, ListShifts $action): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $shifts = $action->execute($companyId, $request->validated());
 
@@ -288,6 +313,8 @@ class PosController extends Controller
 
     public function openShift(OpenShiftRequest $request, OpenShift $action): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $shift = $action->execute($companyId, $request->user(), $request->validated());
 
@@ -300,6 +327,8 @@ class PosController extends Controller
 
     public function currentShift(GetCurrentShiftRequest $request, GetCurrentShift $action): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $companyId = (int) $request->attributes->get('active_company_id');
         $shift = $action->execute($companyId, $request->integer('register_id') ?: null);
 
@@ -311,6 +340,8 @@ class PosController extends Controller
 
     public function closeShift(CloseShiftRequest $request, CloseShift $action, int $shift): JsonResponse
     {
+        $this->abortIfCateringOnly($request);
+
         $closed = $action->execute($this->resolveShift($request, $shift), $request->user(), $request->validated());
 
         return $this->success(
@@ -338,5 +369,14 @@ class PosController extends Controller
         return Sale::query()
             ->forCompany((int) $request->attributes->get('active_company_id'))
             ->findOrFail($id);
+    }
+
+    private function abortIfCateringOnly(Request $request): void
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        if (app(CateringMode::class)->posCateringOnly($companyId)) {
+            abort(403, __('This workflow is disabled for catering-only companies.'));
+        }
     }
 }

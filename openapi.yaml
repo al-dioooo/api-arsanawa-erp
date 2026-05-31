@@ -2693,6 +2693,21 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/Success'
+  '/api/v1/inventory/product-units/{productUnit}/images':
+    post:
+      operationId: inventory_product_units_images_store
+      tags: [Inventory]
+      summary: api.v1.inventory.product-units.images.store
+      parameters:
+        -
+          name: productUnit
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
   /api/v1/inventory/variant-groups:
     get:
       operationId: inventory_variant_groups_index
@@ -2865,6 +2880,74 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  '/api/v1/inventory/products/imports/{import}':
+    get:
+      operationId: inventory_products_imports_show
+      tags: [Inventory]
+      summary: api.v1.inventory.products.imports.show
+      parameters:
+        -
+          name: import
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/inventory/products/imports/{import}/commit':
+    post:
+      operationId: inventory_products_imports_commit
+      tags: [Inventory]
+      summary: api.v1.inventory.products.imports.commit
+      parameters:
+        -
+          name: import
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/inventory/products/imports/{import}/preview':
+    post:
+      operationId: inventory_products_imports_preview
+      tags: [Inventory]
+      summary: api.v1.inventory.products.imports.preview
+      parameters:
+        -
+          name: import
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  /api/v1/inventory/products/imports/inspect:
+    post:
+      operationId: inventory_products_imports_inspect
+      tags: [Inventory]
+      summary: api.v1.inventory.products.imports.inspect
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/inventory/products/imports/template.{format}':
+    get:
+      operationId: inventory_products_imports_template
+      tags: [Inventory]
+      summary: api.v1.inventory.products.imports.template
+      parameters:
+        -
+          name: format
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
   '/api/v1/inventory/products/{product}':
     get:
       operationId: inventory_products_show
@@ -2966,6 +3049,21 @@ paths:
       security:
         -
           bearerAuth: {  }
+  '/api/v1/inventory/products/{product}/images':
+    post:
+      operationId: inventory_products_images_store
+      tags: [Inventory]
+      summary: api.v1.inventory.products.images.store
+      parameters:
+        -
+          name: product
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
   '/api/v1/inventory/products/{product}/tags':
     put:
       operationId: inventory_products_tags_sync
@@ -5350,6 +5448,74 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  '/api/v1/pos/sales/imports/{import}':
+    get:
+      operationId: pos_sales_imports_show
+      tags: [Pos]
+      summary: api.v1.pos.sales.imports.show
+      parameters:
+        -
+          name: import
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/pos/sales/imports/{import}/commit':
+    post:
+      operationId: pos_sales_imports_commit
+      tags: [Pos]
+      summary: api.v1.pos.sales.imports.commit
+      parameters:
+        -
+          name: import
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/pos/sales/imports/{import}/preview':
+    post:
+      operationId: pos_sales_imports_preview
+      tags: [Pos]
+      summary: api.v1.pos.sales.imports.preview
+      parameters:
+        -
+          name: import
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  /api/v1/pos/sales/imports/inspect:
+    post:
+      operationId: pos_sales_imports_inspect
+      tags: [Pos]
+      summary: api.v1.pos.sales.imports.inspect
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+  '/api/v1/pos/sales/imports/template.{format}':
+    get:
+      operationId: pos_sales_imports_template
+      tags: [Pos]
+      summary: api.v1.pos.sales.imports.template
+      parameters:
+        -
+          name: format
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
   '/api/v1/pos/sales/{sale}':
     get:
       operationId: pos_sales_show

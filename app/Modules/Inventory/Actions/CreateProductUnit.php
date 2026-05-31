@@ -27,7 +27,7 @@ class CreateProductUnit
 
             $productUnit->variants()->sync($data['variant_ids'] ?? []);
 
-            return $productUnit->load(['product.category', 'product.brand', 'variants.group.unit']);
+            return $productUnit->load(['product.category', 'product.brand', 'images', 'variants.group.unit']);
         });
     }
 }

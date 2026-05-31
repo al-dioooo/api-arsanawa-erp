@@ -10,7 +10,7 @@ class GetProduct
     {
         return Product::query()
             ->forCompany($companyId)
-            ->with(['category', 'brand', 'baseUom', 'variants', 'productUnits.variants.group.unit', 'tags'])
+            ->with(['category', 'brand', 'baseUom', 'variants', 'productUnits.images', 'productUnits.variants.group.unit', 'images', 'tags'])
             ->findOrFail($productId);
     }
 }

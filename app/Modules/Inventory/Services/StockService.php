@@ -27,6 +27,8 @@ class StockService
                 'unit_cost' => $data['unit_cost'],
                 'received_at' => $data['received_at'] ?? now()->toDateString(),
                 'expiry_date' => $data['expiry_date'] ?? null,
+                'production_date' => $data['production_date'] ?? null,
+                'batch_metadata' => $data['batch_metadata'] ?? null,
                 'status' => 'active',
                 'created_by' => $data['created_by'] ?? null,
                 'updated_by' => $data['created_by'] ?? null,

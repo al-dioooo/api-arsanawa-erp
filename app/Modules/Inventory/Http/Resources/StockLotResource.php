@@ -22,6 +22,8 @@ class StockLotResource extends JsonResource
             'unit_cost' => $this->unit_cost,
             'received_at' => $this->received_at?->toDateString(),
             'expiry_date' => $this->expiry_date?->toDateString(),
+            'production_date' => $this->production_date?->toDateString(),
+            'batch_metadata' => $this->batch_metadata,
             'status' => $this->status,
         ];
     }

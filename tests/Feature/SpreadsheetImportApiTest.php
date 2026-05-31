@@ -1,0 +1,317 @@
+<?php
+
+use App\Modules\Inventory\Models\Price;
+use App\Modules\Inventory\Models\PriceList;
+use App\Modules\Inventory\Models\ProductUnit;
+use App\Modules\Inventory\Models\ProductVariant;
+use App\Modules\Partners\Models\Partner;
+use App\Modules\Pos\Models\Sale;
+use Database\Seeders\CurrencySeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
+use Spatie\Permission\PermissionRegistrar;
+
+beforeEach(function (): void {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    setPermissionsTeamId(null);
+    $this->seed(CurrencySeeder::class);
+});
+
+function spreadsheetUpload(string $name, string $contents): UploadedFile
+{
+    return UploadedFile::fake()->createWithContent($name, $contents);
+}
+
+function importCsv(array $headers, array $rows): string
+{
+    $lines = [implode(',', $headers)];
+
+    foreach ($rows as $row) {
+        $lines[] = implode(',', array_map(
+            fn (string $value): string => str_contains($value, ',') ? '"'.str_replace('"', '""', $value).'"' : $value,
+            $row,
+        ));
+    }
+
+    return implode("\n", $lines)."\n";
+}
+
+function pricedImportVariant(string $token, int $companyId, string $sku, int $price): int
+{
+    $unit = createUnit($token, $companyId, 'PCS');
+    $productId = createProduct($token, $companyId, [
+        'name' => "Import Menu {$sku}",
+        'base_uom_id' => $unit,
+        'variants' => [['sku' => $sku, 'name' => $sku]],
+    ]);
+
+    $variantId = ProductVariant::query()
+        ->where('product_id', $productId)
+        ->where('sku', $sku)
+        ->value('id');
+
+    $priceList = PriceList::query()->create([
+        'company_id' => $companyId,
+        'name' => "Import Price {$sku}",
+        'is_default' => true,
+        'is_active' => true,
+    ]);
+
+    Price::query()->create([
+        'price_list_id' => $priceList->id,
+        'product_variant_id' => $variantId,
+        'price' => $price,
+        'effective_from' => '2026-01-01',
+    ]);
+
+    return $variantId;
+}
+
+describe('spreadsheet import templates', function (): void {
+    it('downloads POS and Inventory templates as CSV and XLSX', function (): void {
+        [, $token, $companyId] = inventoryActor();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->get('/api/v1/pos/sales/imports/template.csv')
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertSee('order_reference');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->get('/api/v1/pos/sales/imports/template.xlsx')
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->get('/api/v1/inventory/products/imports/template.csv')
+            ->assertSuccessful()
+            ->assertSee('product_name')
+            ->assertSee('batch_number');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->get('/api/v1/inventory/products/imports/template.xlsx')
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+});
+
+describe('POS catering spreadsheet imports', function (): void {
+    it('previews and commits a confirmed catering sale from a CSV upload', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        pricedImportVariant($token, $companyId, 'SKL-IMP-BOX', 125000);
+
+        $csv = importCsv([
+            'order_reference',
+            'branch_code',
+            'customer_name',
+            'customer_email',
+            'customer_phone',
+            'order_date',
+            'fulfilment_date',
+            'delivery_address',
+            'sku',
+            'quantity',
+            'unit_price',
+            'discount',
+            'notes',
+        ], [
+            ['ORD-001', 'MAIN', 'Budi Santoso', 'budi@example.test', '+628123456789', '2026-06-01', '2026-06-05', 'Jl Sekalori 1', 'SKL-IMP-BOX', '2', '125000', '0', 'No spicy sauce'],
+        ]);
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/pos/sales/imports/inspect', [
+                'file' => spreadsheetUpload('orders.csv', $csv),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.import.kind', 'pos_catering_orders')
+            ->assertJsonPath('data.sheets.0.supported', true)
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/pos/sales/imports/{$importId}/preview", [
+                'sheet_name' => 'orders.csv',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.status', 'previewed')
+            ->assertJsonPath('data.import.error_count', 0)
+            ->assertJsonPath('data.rows.0.normalized.order_reference', 'ORD-001');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/pos/sales/imports/{$importId}/commit")
+            ->assertAccepted()
+            ->assertJsonPath('data.import.status', 'completed')
+            ->assertJsonPath('data.import.created_count', 1);
+
+        $sale = Sale::query()->where('company_id', $companyId)->where('external_reference', 'ORD-001')->first();
+        $partner = Partner::query()->where('company_id', $companyId)->where('email', 'budi@example.test')->first();
+
+        expect($sale)->not->toBeNull()
+            ->and($sale->status)->toBe('confirmed')
+            ->and($sale->type)->toBe('catering')
+            ->and($sale->partner_id)->toBe($partner->id)
+            ->and($sale->lines)->toHaveCount(1);
+    });
+
+    it('rejects commit when preview has a row error', function (): void {
+        [, $token, $companyId] = inventoryActor();
+
+        $csv = importCsv([
+            'order_reference',
+            'branch_code',
+            'customer_name',
+            'customer_email',
+            'customer_phone',
+            'order_date',
+            'fulfilment_date',
+            'delivery_address',
+            'sku',
+            'quantity',
+            'unit_price',
+            'discount',
+            'notes',
+        ], [
+            ['ORD-BAD', 'MISSING', 'Bad Customer', 'bad@example.test', '', '2026-06-01', '2026-06-05', '', 'NO-SKU', '2', '125000', '0', ''],
+        ]);
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/pos/sales/imports/inspect', [
+                'file' => spreadsheetUpload('orders.csv', $csv),
+            ])
+            ->assertCreated()
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/pos/sales/imports/{$importId}/preview", [
+                'sheet_name' => 'orders.csv',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.status', 'invalid')
+            ->assertJsonPath('data.import.error_count', 2);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/pos/sales/imports/{$importId}/commit")
+            ->assertUnprocessable();
+
+        $this->assertDatabaseMissing('sales', ['external_reference' => 'ORD-BAD']);
+    });
+
+    it('inspects a public Google Sheets CSV export link', function (): void {
+        [, $token, $companyId] = inventoryActor();
+
+        Http::fake([
+            'docs.google.com/*' => Http::response("order_reference,branch_code\nORD-1,MAIN\n", 200, [
+                'Content-Type' => 'text/csv',
+            ]),
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/pos/sales/imports/inspect', [
+                'source_url' => 'https://docs.google.com/spreadsheets/d/example/export?format=csv&gid=0',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.import.source', 'url')
+            ->assertJsonPath('data.sheets.0.supported', true);
+    });
+});
+
+describe('Inventory product spreadsheet imports', function (): void {
+    it('creates product master data, pricing, opening stock, and batch metadata from CSV', function (): void {
+        [, $token, $companyId] = inventoryActor();
+
+        $csv = importCsv([
+            'product_name',
+            'product_description',
+            'category_path',
+            'brand_name',
+            'base_uom_code',
+            'sku',
+            'product_unit_name',
+            'barcode',
+            'variant_values',
+            'price_list_name',
+            'currency_code',
+            'price',
+            'effective_from',
+            'branch_code',
+            'opening_quantity',
+            'unit_cost',
+            'batch_number',
+            'received_at',
+            'expiry_date',
+            'production_date',
+            'status',
+            'track_stock',
+        ], [
+            ['Nasi Box Premium', 'Premium catering package', 'Catering>Nasi Box', 'SEKALORI', 'BOX', 'SKL-NBP-25-AYM', 'Nasi Box Premium 25 Pax Ayam', '899700000001', 'Package Size=25 Pax;Protein=Ayam', 'SEKALORI Retail', 'IDR', '1250000', '2026-06-01', 'MAIN', '12', '760000', 'BATCH-JUN-01', '2026-06-01', '2026-06-10', '2026-05-31', 'active', 'true'],
+        ]);
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/inventory/products/imports/inspect', [
+                'file' => spreadsheetUpload('products.csv', $csv),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.import.kind', 'inventory_products')
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/inventory/products/imports/{$importId}/preview", [
+                'sheet_name' => 'products.csv',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.error_count', 0)
+            ->assertJsonPath('data.rows.0.normalized.sku', 'SKL-NBP-25-AYM');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/inventory/products/imports/{$importId}/commit")
+            ->assertAccepted()
+            ->assertJsonPath('data.import.status', 'completed');
+
+        $unit = ProductUnit::query()->where('company_id', $companyId)->where('sku', 'SKL-NBP-25-AYM')->first();
+
+        expect($unit)->not->toBeNull()
+            ->and($unit->product->name)->toBe('Nasi Box Premium')
+            ->and($unit->variants)->toHaveCount(2);
+
+        $this->assertDatabaseHas('prices', [
+            'product_unit_id' => $unit->id,
+            'price' => '1250000.0000',
+        ]);
+
+        $this->assertDatabaseHas('stock_lots', [
+            'product_unit_id' => $unit->id,
+            'lot_number' => 'BATCH-JUN-01',
+            'production_date' => '2026-05-31',
+            'remaining_quantity' => '12.0000',
+        ]);
+    });
+
+    it('blocks inventory imports above the 1000 row limit', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $headers = [
+            'product_name',
+            'base_uom_code',
+            'sku',
+            'product_unit_name',
+            'branch_code',
+        ];
+        $rows = [];
+
+        for ($i = 1; $i <= 1001; $i++) {
+            $rows[] = ['Product '.$i, 'PCS', 'SKU-'.$i, 'Unit '.$i, 'MAIN'];
+        }
+
+        $importId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/inventory/products/imports/inspect', [
+                'file' => spreadsheetUpload('too-many-products.csv', importCsv($headers, $rows)),
+            ])
+            ->assertCreated()
+            ->json('data.import.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/inventory/products/imports/{$importId}/preview", [
+                'sheet_name' => 'too-many-products.csv',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['sheet_name']);
+    });
+});

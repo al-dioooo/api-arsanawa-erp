@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Product extends Model
 {
@@ -64,6 +65,11 @@ class Product extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'product_tag');
+    }
+
+    public function images(): MorphMany
+    {
+        return $this->morphMany(ProductImage::class, 'imageable')->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id');
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder

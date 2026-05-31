@@ -15,7 +15,7 @@ class ListProductUnits
     {
         $query = ProductUnit::query()
             ->forCompany($companyId)
-            ->with(['product.category', 'product.brand', 'variants.group.unit']);
+            ->with(['product.category', 'product.brand', 'images', 'variants.group.unit']);
 
         if (isset($filters['product_id'])) {
             $query->where('product_id', $filters['product_id']);

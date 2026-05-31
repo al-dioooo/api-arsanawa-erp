@@ -9,6 +9,7 @@ use App\Modules\Organization\Http\Controllers\ModuleRegistryController;
 use App\Modules\Organization\Http\Controllers\OrganizationController;
 use App\Modules\Partners\Http\Controllers\PartnersController;
 use App\Modules\Platform\Http\Controllers\PlatformController;
+use App\Modules\Platform\Http\Controllers\SpreadsheetImportController;
 use App\Modules\Pos\Http\Controllers\ExternalCateringOrderController;
 use App\Modules\Pos\Http\Controllers\PosController;
 use Illuminate\Support\Facades\Route;
@@ -163,12 +164,19 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::get('product-units/{productUnit}', [InventoryController::class, 'showProductUnit'])->name('product-units.show');
         Route::patch('product-units/{productUnit}', [InventoryController::class, 'updateProductUnit'])->name('product-units.update');
         Route::delete('product-units/{productUnit}', [InventoryController::class, 'destroyProductUnit'])->name('product-units.destroy');
+        Route::post('product-units/{productUnit}/images', [InventoryController::class, 'storeProductUnitImage'])->name('product-units.images.store');
 
         Route::get('products', [InventoryController::class, 'products'])->name('products.index');
         Route::post('products', [InventoryController::class, 'storeProduct'])->name('products.store');
+        Route::get('products/imports/template.{format}', [SpreadsheetImportController::class, 'inventoryTemplate'])->name('products.imports.template');
+        Route::post('products/imports/inspect', [SpreadsheetImportController::class, 'inventoryInspect'])->name('products.imports.inspect');
+        Route::get('products/imports/{import}', [SpreadsheetImportController::class, 'inventoryShow'])->name('products.imports.show');
+        Route::post('products/imports/{import}/preview', [SpreadsheetImportController::class, 'inventoryPreview'])->name('products.imports.preview');
+        Route::post('products/imports/{import}/commit', [SpreadsheetImportController::class, 'inventoryCommit'])->name('products.imports.commit');
         Route::get('products/{product}', [InventoryController::class, 'showProduct'])->name('products.show');
         Route::patch('products/{product}', [InventoryController::class, 'updateProduct'])->name('products.update');
         Route::delete('products/{product}', [InventoryController::class, 'destroyProduct'])->name('products.destroy');
+        Route::post('products/{product}/images', [InventoryController::class, 'storeProductImage'])->name('products.images.store');
 
         Route::post('products/{product}/variants', [InventoryController::class, 'storeVariant'])->name('products.variants.store');
         Route::patch('products/{product}/variants/{variant}', [InventoryController::class, 'updateVariant'])->name('products.variants.update');
@@ -296,6 +304,11 @@ Route::middleware(['auth:api', 'organization.company-context'])
 
         Route::get('sales', [PosController::class, 'sales'])->name('sales.index');
         Route::post('sales', [PosController::class, 'storeSale'])->name('sales.store');
+        Route::get('sales/imports/template.{format}', [SpreadsheetImportController::class, 'posTemplate'])->name('sales.imports.template');
+        Route::post('sales/imports/inspect', [SpreadsheetImportController::class, 'posInspect'])->name('sales.imports.inspect');
+        Route::get('sales/imports/{import}', [SpreadsheetImportController::class, 'posShow'])->name('sales.imports.show');
+        Route::post('sales/imports/{import}/preview', [SpreadsheetImportController::class, 'posPreview'])->name('sales.imports.preview');
+        Route::post('sales/imports/{import}/commit', [SpreadsheetImportController::class, 'posCommit'])->name('sales.imports.commit');
         Route::get('sales/{sale}', [PosController::class, 'showSale'])->name('sales.show');
         Route::patch('sales/{sale}', [PosController::class, 'updateSale'])->name('sales.update');
         Route::post('sales/{sale}/apply-promotions', [PosController::class, 'applyPromotions'])->name('sales.apply-promotions');

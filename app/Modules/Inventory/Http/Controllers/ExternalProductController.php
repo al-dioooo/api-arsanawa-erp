@@ -5,6 +5,7 @@ namespace App\Modules\Inventory\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Inventory\Models\Price;
 use App\Modules\Inventory\Models\Product;
+use App\Modules\Inventory\Models\ProductImage;
 use App\Modules\Inventory\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,10 @@ class ExternalProductController extends Controller
         $products = Product::query()
             ->forCompany($companyId)
             ->where('status', 'active')
-            ->with(['variants' => fn ($query) => $query->where('is_active', true)->orderBy('sku')])
+            ->with([
+                'images',
+                'variants' => fn ($query) => $query->where('is_active', true)->orderBy('sku'),
+            ])
             ->orderBy('name')
             ->get()
             ->map(fn (Product $product): array => $this->transformProduct($product, $companyId, $branchId, $on))
@@ -74,6 +78,13 @@ class ExternalProductController extends Controller
                     'price' => $price?->price,
                     'maximum_retail_price' => $price?->maximum_retail_price,
                     'currency_id' => $price?->priceList?->currency_id,
+                    'product_unit' => $price?->productUnit ? [
+                        'id' => $price->productUnit->id,
+                        'sku' => $price->productUnit->sku,
+                        'barcode' => $price->productUnit->barcode,
+                        'name' => $price->productUnit->name,
+                        'images' => $this->imageMetadata($price->productUnit->images),
+                    ] : null,
                 ];
             })
             ->values()
@@ -84,6 +95,7 @@ class ExternalProductController extends Controller
             'name' => $product->name,
             'description' => $product->description,
             'attributes' => $product->attributes,
+            'images' => $this->imageMetadata($product->images),
             'variants' => $variants,
         ];
     }
@@ -106,7 +118,7 @@ class ExternalProductController extends Controller
     private function resolvePrice(int $companyId, int $variantId, string $on): ?Price
     {
         return Price::query()
-            ->with('priceList')
+            ->with(['priceList', 'productUnit.images'])
             ->where('product_variant_id', $variantId)
             ->where('effective_from', '<=', $on)
             ->where(function ($query) use ($on): void {
@@ -156,5 +168,24 @@ class ExternalProductController extends Controller
         }
 
         return $on;
+    }
+
+    private function imageMetadata($images): array
+    {
+        return $images
+            ->map(fn (ProductImage $image): array => [
+                'id' => $image->id,
+                'url' => $image->url,
+                'original_url' => $image->original_url,
+                'alt_text' => $image->alt_text,
+                'mime_type' => $image->mime_type,
+                'size_bytes' => $image->size_bytes,
+                'width' => $image->width,
+                'height' => $image->height,
+                'is_primary' => $image->is_primary,
+                'sort_order' => $image->sort_order,
+            ])
+            ->values()
+            ->all();
     }
 }

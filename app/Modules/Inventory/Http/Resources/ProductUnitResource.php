@@ -19,6 +19,7 @@ class ProductUnitResource extends JsonResource
             'is_active' => $this->is_active,
             'product' => new ProductResource($this->whenLoaded('product')),
             'variants' => VariantResource::collection($this->whenLoaded('variants')),
+            'images' => ProductImageResource::collection($this->whenLoaded('images')),
         ];
     }
 }

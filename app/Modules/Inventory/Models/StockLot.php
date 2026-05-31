@@ -5,6 +5,7 @@ namespace App\Modules\Inventory\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class StockLot extends Model
 {
@@ -19,6 +20,8 @@ class StockLot extends Model
         'unit_cost',
         'received_at',
         'expiry_date',
+        'production_date',
+        'batch_metadata',
         'status',
         'created_by',
         'updated_by',
@@ -36,6 +39,8 @@ class StockLot extends Model
             'unit_cost' => 'decimal:4',
             'received_at' => 'date',
             'expiry_date' => 'date',
+            'production_date' => 'date',
+            'batch_metadata' => 'array',
         ];
     }
 
@@ -47,6 +52,13 @@ class StockLot extends Model
     public function productUnit(): BelongsTo
     {
         return $this->belongsTo(ProductUnit::class);
+    }
+
+    public function setProductionDateAttribute(mixed $value): void
+    {
+        $this->attributes['production_date'] = $value !== null && $value !== ''
+            ? Carbon::parse($value)->toDateString()
+            : null;
     }
 
     public function scopeActive(Builder $query): Builder

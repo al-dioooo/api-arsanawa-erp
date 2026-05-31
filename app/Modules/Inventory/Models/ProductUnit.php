@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ProductUnit extends Model
 {
@@ -37,6 +38,11 @@ class ProductUnit extends Model
     public function variants(): BelongsToMany
     {
         return $this->belongsToMany(Variant::class, 'product_unit_variant')->withTimestamps();
+    }
+
+    public function images(): MorphMany
+    {
+        return $this->morphMany(ProductImage::class, 'imageable')->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id');
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder
