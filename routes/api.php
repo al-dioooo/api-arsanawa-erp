@@ -306,6 +306,7 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::post('sales', [PosController::class, 'storeSale'])->name('sales.store');
         Route::get('sales/imports/template.{format}', [SpreadsheetImportController::class, 'posTemplate'])->name('sales.imports.template');
         Route::post('sales/imports/inspect', [SpreadsheetImportController::class, 'posInspect'])->name('sales.imports.inspect');
+        Route::post('sales/imports/configured/preview', [SpreadsheetImportController::class, 'posConfiguredPreview'])->name('sales.imports.configured.preview');
         Route::get('sales/imports/{import}', [SpreadsheetImportController::class, 'posShow'])->name('sales.imports.show');
         Route::post('sales/imports/{import}/preview', [SpreadsheetImportController::class, 'posPreview'])->name('sales.imports.preview');
         Route::post('sales/imports/{import}/commit', [SpreadsheetImportController::class, 'posCommit'])->name('sales.imports.commit');

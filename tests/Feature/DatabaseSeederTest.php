@@ -10,6 +10,8 @@ use App\Modules\Inventory\Models\Variant;
 use App\Modules\Inventory\Models\VariantGroup;
 use App\Modules\Organization\Models\Company;
 use App\Modules\Organization\Models\Membership;
+use App\Modules\Platform\Models\Setting;
+use App\Modules\Pos\Models\Register;
 use Database\Seeders\DatabaseSeeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -101,5 +103,44 @@ describe('Database seeder', function (): void {
             ->and($productUnit->variants()->count())->toBeGreaterThanOrEqual(3)
             ->and(Price::where('product_unit_id', $productUnit->id)->count())->toBeGreaterThanOrEqual(1)
             ->and(StockLot::where('product_unit_id', $productUnit->id)->count())->toBeGreaterThanOrEqual(1);
+    });
+
+    it('seeds SEKALORI Google Form catering import catalogue and settings', function (): void {
+        $this->seed(DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
+
+        $company = Company::query()->where('slug', 'sekalori')->firstOrFail();
+        $settings = Setting::query()
+            ->where('company_id', $company->id)
+            ->where('module', 'pos')
+            ->where('key', 'catering_form_import')
+            ->firstOrFail()
+            ->value;
+
+        expect(Category::where('company_id', $company->id)->where('name', 'Indonesian Local')->count())->toBe(1)
+            ->and(Category::where('company_id', $company->id)->where('name', 'Western')->count())->toBe(1)
+            ->and(Category::where('company_id', $company->id)->where('name', 'Japanese')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-BND-IDN')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-BND-WST')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-BND-JPN')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-IDN-CMP-01')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-IDN-CMP-02')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-IDN-CMP-03')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-WST-CMP-01')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-WST-CMP-02')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-WST-CMP-03')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-JPN-CMP-01')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-JPN-CMP-02')->count())->toBe(1)
+            ->and(ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-JPN-CMP-03')->count())->toBe(1)
+            ->and(Register::where('company_id', $company->id)->where('code', 'GFORM-IMPORT')->count())->toBe(1)
+            ->and($settings['default_branch_code'])->toBe('MAIN')
+            ->and($settings['default_quantity'])->toBe(1)
+            ->and($settings['default_import_register_code'])->toBe('GFORM-IMPORT')
+            ->and($settings['menu_type_bundle_skus']['Indonesian Local'])->toBe('SKL-BND-IDN')
+            ->and($settings['menu_type_bundle_skus']['Western'])->toBe('SKL-BND-WST')
+            ->and($settings['menu_type_bundle_skus']['Japanese'])->toBe('SKL-BND-JPN')
+            ->and(Price::where('product_unit_id', ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-BND-IDN')->value('id'))->value('price'))->toBe('100000.0000')
+            ->and(Price::where('product_unit_id', ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-BND-WST')->value('id'))->value('price'))->toBe('125000.0000')
+            ->and(Price::where('product_unit_id', ProductUnit::where('company_id', $company->id)->where('sku', 'SKL-BND-JPN')->value('id'))->value('price'))->toBe('150000.0000');
     });
 });

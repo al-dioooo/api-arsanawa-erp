@@ -30,6 +30,23 @@ class SpreadsheetImportController extends Controller
         return $this->inspect($request, $service, SpreadsheetImportService::POS_KIND);
     }
 
+    public function posConfiguredPreview(Request $request, SpreadsheetImportService $service): JsonResponse
+    {
+        $import = $service->previewConfiguredPosCateringImport(
+            (int) $request->attributes->get('active_company_id'),
+            $request->user(),
+        );
+
+        return $this->success(
+            [
+                'import' => new ImportBatchResource($import),
+                'rows' => ImportRowResource::collection($import->rows),
+                'sheets' => $import->sheets ?? [],
+            ],
+            __('Configured catering import previewed.'),
+        );
+    }
+
     public function inventoryInspect(InspectSpreadsheetImportRequest $request, SpreadsheetImportService $service): JsonResponse
     {
         return $this->inspect($request, $service, SpreadsheetImportService::INVENTORY_KIND);

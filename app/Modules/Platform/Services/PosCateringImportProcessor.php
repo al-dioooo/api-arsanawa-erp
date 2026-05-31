@@ -4,8 +4,10 @@ namespace App\Modules\Platform\Services;
 
 use App\Modules\Inventory\Models\ProductVariant;
 use App\Modules\Partners\Actions\FindOrCreateCustomer;
+use App\Modules\Pos\Models\Register;
 use App\Modules\Pos\Models\Sale;
 use App\Modules\Pos\Models\SaleLine;
+use App\Modules\Pos\Models\SalePayment;
 use App\Modules\Pos\Services\CheckoutService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +44,18 @@ class PosCateringImportProcessor
 
         if (($row['quantity'] ?? 0) <= 0) {
             $errors['quantity'][] = __('Quantity must be greater than zero.');
+        }
+
+        if (($row['payment_method'] ?? '') !== '' && ! in_array($row['payment_method'], ['cash', 'card', 'qris', 'transfer'], true)) {
+            $errors['payment_method'][] = __('Payment method is not supported.');
+        }
+
+        if (($row['payment_method'] ?? '') !== '') {
+            if (($row['import_register_code'] ?? '') === '') {
+                $errors['import_register_code'][] = __('Import register code is required for paid form orders.');
+            } elseif (! Register::query()->forCompany($companyId)->where('code', $row['import_register_code'])->exists()) {
+                $errors['import_register_code'][] = __('Import register was not found.');
+            }
         }
 
         return $errors;
@@ -86,10 +100,18 @@ class PosCateringImportProcessor
                 })->values()->all();
                 $orderDate = $first['order_date'] ?: now()->toDateString();
                 $calculations = $this->checkoutService->calculate($companyId, $lines, $orderDate);
+                $sourceChannel = ($first['source_channel'] ?? '') ?: 'spreadsheet';
+                $paymentMethod = ($first['payment_method'] ?? '') ?: null;
+                $registerId = $paymentMethod
+                    ? Register::query()
+                        ->forCompany($companyId)
+                        ->where('code', $first['import_register_code'] ?? '')
+                        ->value('id')
+                    : null;
                 $sale = Sale::query()
                     ->forCompany($companyId)
                     ->where('source', 'import')
-                    ->where('source_channel', 'spreadsheet')
+                    ->where('source_channel', $sourceChannel)
                     ->where('external_reference', $orderReference)
                     ->first();
                 $exists = $sale !== null;
@@ -99,7 +121,7 @@ class PosCateringImportProcessor
                         'company_id' => $companyId,
                         'sale_number' => 'IMP-'.date('Ymd').'-'.strtoupper(Str::random(6)),
                         'source' => 'import',
-                        'source_channel' => 'spreadsheet',
+                        'source_channel' => $sourceChannel,
                         'external_reference' => $orderReference,
                         'created_by' => $userId,
                     ]);
@@ -107,7 +129,7 @@ class PosCateringImportProcessor
 
                 $sale->fill([
                     'branch_id' => $branchId,
-                    'register_id' => null,
+                    'register_id' => $registerId,
                     'cashier_shift_id' => null,
                     'type' => 'catering',
                     'partner_id' => $customer['id'],
@@ -115,6 +137,7 @@ class PosCateringImportProcessor
                     'status' => 'confirmed',
                     'order_date' => $orderDate,
                     'fulfilment_date' => $first['fulfilment_date'],
+                    'fulfilment_time_window' => ($first['fulfilment_time_window'] ?? '') ?: null,
                     'delivery_address' => $first['delivery_address'] ?: null,
                     'currency_id' => 1,
                     'exchange_rate' => 1,
@@ -122,7 +145,7 @@ class PosCateringImportProcessor
                     'discount_total' => $calculations['discount_total'],
                     'tax_total' => $calculations['tax_total'],
                     'total' => $calculations['total'],
-                    'amount_paid' => '0.0000',
+                    'amount_paid' => $paymentMethod ? $calculations['total'] : '0.0000',
                     'notes' => $first['notes'] ?: null,
                     'updated_by' => $userId,
                 ]);
@@ -131,6 +154,21 @@ class PosCateringImportProcessor
 
                 foreach ($calculations['lines'] as $line) {
                     SaleLine::query()->create(array_merge($line, ['sale_id' => $sale->id]));
+                }
+
+                if ($sourceChannel === 'google_form') {
+                    $sale->payments()->delete();
+
+                    if ($paymentMethod) {
+                        SalePayment::query()->create([
+                            'sale_id' => $sale->id,
+                            'method' => $paymentMethod,
+                            'amount' => $calculations['total'],
+                            'reference' => ($first['payment_reference'] ?? '') ?: null,
+                            'paid_at' => $orderDate,
+                            'created_by' => $userId,
+                        ]);
+                    }
                 }
 
                 $exists ? $updated++ : $created++;

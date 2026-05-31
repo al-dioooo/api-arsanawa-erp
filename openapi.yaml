@@ -5501,6 +5501,18 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/Success'
+  /api/v1/pos/sales/imports/configured/preview:
+    post:
+      operationId: pos_sales_imports_configured_preview
+      tags: [Pos]
+      summary: api.v1.pos.sales.imports.configured.preview
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/ValidationError'
   '/api/v1/pos/sales/imports/template.{format}':
     get:
       operationId: pos_sales_imports_template

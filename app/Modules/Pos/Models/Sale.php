@@ -27,6 +27,7 @@ class Sale extends Model
         'external_api_key_id',
         'order_date',
         'fulfilment_date',
+        'fulfilment_time_window',
         'delivery_address',
         'currency_id',
         'exchange_rate',

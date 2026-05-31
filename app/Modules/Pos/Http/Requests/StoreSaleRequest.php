@@ -60,6 +60,7 @@ class StoreSaleRequest extends FormRequest
             'customer_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'order_date' => ['sometimes', 'date'],
             'fulfilment_date' => ['required_if:type,catering', 'nullable', 'date'],
+            'fulfilment_time_window' => ['sometimes', 'nullable', 'string', 'max:255'],
             'delivery_address' => ['sometimes', 'nullable', 'string'],
             'currency_id' => ['sometimes', 'nullable', 'integer', 'exists:currencies,id'],
             'exchange_rate' => ['sometimes', 'nullable', 'numeric', 'min:0'],

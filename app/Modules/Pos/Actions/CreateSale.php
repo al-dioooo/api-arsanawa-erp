@@ -38,6 +38,7 @@ class CreateSale
                 'status' => 'draft',
                 'order_date' => $orderDate,
                 'fulfilment_date' => $data['fulfilment_date'] ?? null,
+                'fulfilment_time_window' => $data['fulfilment_time_window'] ?? null,
                 'delivery_address' => $data['delivery_address'] ?? null,
                 'currency_id' => $data['currency_id'] ?? 1,
                 'exchange_rate' => $data['exchange_rate'] ?? 1.0,

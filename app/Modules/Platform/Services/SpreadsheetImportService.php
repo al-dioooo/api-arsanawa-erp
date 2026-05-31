@@ -3,10 +3,12 @@
 namespace App\Modules\Platform\Services;
 
 use App\Models\User;
+use App\Modules\Organization\Models\Company;
 use App\Modules\Platform\Jobs\CommitSpreadsheetImport;
 use App\Modules\Platform\Models\ImportBatch;
 use App\Modules\Platform\Models\ImportRow;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +26,10 @@ class SpreadsheetImportService
     public const INVENTORY_KIND = 'inventory_products';
 
     public const MAX_ROWS = 1000;
+
+    private const CONFIGURED_POS_SHEET = 'google-sheet.csv';
+
+    public function __construct(private readonly SettingsManager $settings) {}
 
     /**
      * @return list<string>
@@ -126,6 +132,89 @@ class SpreadsheetImportService
             'sheets' => $sheets,
             'status' => 'inspected',
         ]);
+    }
+
+    public function previewConfiguredPosCateringImport(int $companyId, User $user): ImportBatch
+    {
+        $company = Company::query()->findOrFail($companyId);
+
+        if ($company->slug !== 'sekalori') {
+            abort(403, __('Configured catering form imports are only available for SEKALORI.'));
+        }
+
+        $config = $this->configuredPosCateringImportConfig($companyId);
+        $sourceUrl = (string) ($config['source_url'] ?? '');
+
+        if ($sourceUrl === '') {
+            throw ValidationException::withMessages([
+                'source_url' => [__('A configured Google Sheets source URL is required.')],
+            ]);
+        }
+
+        $stored = $this->storeRemoteSource($sourceUrl, $companyId);
+        $records = $this->readCsv($stored['path']);
+
+        if ($records->count() > self::MAX_ROWS) {
+            throw ValidationException::withMessages([
+                'source_url' => [__('A sheet may contain at most :count rows.', ['count' => self::MAX_ROWS])],
+            ]);
+        }
+
+        $import = ImportBatch::query()->create([
+            'company_id' => $companyId,
+            'user_id' => $user->id,
+            'kind' => self::POS_KIND,
+            'source' => 'url',
+            'source_path' => $stored['path'],
+            'source_url' => $sourceUrl,
+            'original_name' => self::CONFIGURED_POS_SHEET,
+            'mime_type' => $stored['mime_type'],
+            'sheets' => [[
+                'name' => self::CONFIGURED_POS_SHEET,
+                'supported' => true,
+                'row_count' => $records->count(),
+                'reason' => null,
+            ]],
+            'selected_sheet' => self::CONFIGURED_POS_SHEET,
+            'status' => 'inspected',
+        ]);
+
+        $errorCount = 0;
+
+        foreach ($records as $index => $record) {
+            $rowNumber = $index + 2;
+            [$normalized, $mappingErrors] = $this->mapConfiguredPosCateringRow($record, $config);
+            $errors = $this->validateRow(self::POS_KIND, $companyId, $normalized);
+
+            if (isset($mappingErrors['menu_type'])) {
+                unset($errors['sku']);
+            }
+
+            $errors = array_merge($errors, $mappingErrors);
+
+            if ($errors !== []) {
+                $errorCount += count($errors);
+            }
+
+            ImportRow::query()->create([
+                'import_batch_id' => $import->id,
+                'row_number' => $rowNumber,
+                'raw' => $record,
+                'normalized' => $normalized,
+                'errors' => $errors,
+            ]);
+        }
+
+        $import->forceFill([
+            'status' => $errorCount === 0 ? 'previewed' : 'invalid',
+            'row_count' => $records->count(),
+            'error_count' => $errorCount,
+            'created_count' => 0,
+            'updated_count' => 0,
+            'failure_message' => null,
+        ])->save();
+
+        return $import->fresh(['rows']);
     }
 
     public function preview(ImportBatch $import, string $sheetName): ImportBatch
@@ -404,6 +493,112 @@ class SpreadsheetImportService
         }
 
         return $normalized;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function configuredPosCateringImportConfig(int $companyId): array
+    {
+        $config = $this->settings->get($companyId, 'pos', 'catering_form_import', []);
+
+        if (! is_array($config)) {
+            throw ValidationException::withMessages([
+                'configuration' => [__('The configured catering form import settings are invalid.')],
+            ]);
+        }
+
+        return $config;
+    }
+
+    /**
+     * @param  array<string, string>  $record
+     * @param  array<string, mixed>  $config
+     * @return array{0: array<string, mixed>, 1: array<string, list<string>>}
+     */
+    private function mapConfiguredPosCateringRow(array $record, array $config): array
+    {
+        $errors = [];
+        $fieldMap = is_array($config['field_map'] ?? null) ? $config['field_map'] : [];
+        $value = fn (string $field): string => $this->configuredFieldValue($record, $fieldMap, $field);
+        $timestamp = $value('timestamp');
+        $responseDate = $this->configuredResponseDate($timestamp);
+        $customerName = $value('customer_name');
+        $customerPhone = $value('customer_phone');
+        $menuType = $value('menu_type');
+        $menuMap = is_array($config['menu_type_bundle_skus'] ?? null) ? $config['menu_type_bundle_skus'] : [];
+        $sku = '';
+
+        if ($menuType === '' || ! array_key_exists($menuType, $menuMap)) {
+            $errors['menu_type'][] = __('Menu type is not configured.');
+        } else {
+            $sku = (string) $menuMap[$menuType];
+        }
+
+        $paymentLabel = $value('payment_method');
+        $paymentMap = is_array($config['payment_method_map'] ?? null) ? $config['payment_method_map'] : [];
+        $paymentMethod = null;
+
+        if ($paymentLabel !== '') {
+            if (! array_key_exists($paymentLabel, $paymentMap)) {
+                $errors['payment_method'][] = __('Payment method is not configured.');
+            } elseif ($paymentMap[$paymentLabel] !== null && $paymentMap[$paymentLabel] !== '') {
+                $paymentMethod = (string) $paymentMap[$paymentLabel];
+            }
+        }
+
+        return [[
+            'order_reference' => $this->configuredOrderReference($timestamp, $customerPhone, $customerName, $menuType),
+            'branch_code' => (string) ($config['default_branch_code'] ?? 'MAIN'),
+            'customer_name' => $customerName,
+            'customer_email' => '',
+            'customer_phone' => $customerPhone,
+            'order_date' => $responseDate->toDateString(),
+            'fulfilment_date' => $responseDate->copy()->addDay()->toDateString(),
+            'fulfilment_time_window' => $value('fulfilment_time_window'),
+            'delivery_address' => $value('delivery_address'),
+            'sku' => $sku,
+            'quantity' => (float) ($config['default_quantity'] ?? 1),
+            'unit_price' => '',
+            'discount' => 0.0,
+            'notes' => $value('notes'),
+            'source_channel' => 'google_form',
+            'payment_method' => $paymentMethod,
+            'payment_reference' => $value('payment_reference'),
+            'import_register_code' => $paymentMethod !== null ? (string) ($config['default_import_register_code'] ?? '') : '',
+        ], $errors];
+    }
+
+    /**
+     * @param  array<string, string>  $record
+     * @param  array<string, mixed>  $fieldMap
+     */
+    private function configuredFieldValue(array $record, array $fieldMap, string $field): string
+    {
+        $source = $fieldMap[$field] ?? $field;
+        $header = Str::snake((string) $source);
+
+        return trim((string) ($record[$header] ?? ''));
+    }
+
+    private function configuredResponseDate(string $timestamp): Carbon
+    {
+        if ($timestamp === '') {
+            return now();
+        }
+
+        try {
+            return Carbon::parse($timestamp);
+        } catch (\Throwable) {
+            return now();
+        }
+    }
+
+    private function configuredOrderReference(string $timestamp, string $customerPhone, string $customerName, string $menuType): string
+    {
+        $hash = hash('sha256', implode('|', [$timestamp, $customerPhone, $customerName, $menuType]));
+
+        return 'GFORM-'.strtoupper(substr($hash, 0, 12));
     }
 
     /**

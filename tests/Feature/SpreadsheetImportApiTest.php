@@ -1,13 +1,17 @@
 <?php
 
+use App\Models\User;
 use App\Modules\Inventory\Models\Category;
 use App\Modules\Inventory\Models\Price;
 use App\Modules\Inventory\Models\PriceList;
 use App\Modules\Inventory\Models\ProductUnit;
 use App\Modules\Inventory\Models\ProductVariant;
+use App\Modules\Organization\Models\Company;
 use App\Modules\Partners\Models\Partner;
+use App\Modules\Platform\Services\SettingsManager;
 use App\Modules\Pos\Models\Sale;
 use Database\Seeders\CurrencySeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
@@ -97,6 +101,134 @@ describe('spreadsheet import templates', function (): void {
 });
 
 describe('POS catering spreadsheet imports', function (): void {
+    it('previews and commits configured SEKALORI Google Form rows', function (): void {
+        $this->seed(DatabaseSeeder::class);
+
+        $company = Company::query()->where('slug', 'sekalori')->firstOrFail();
+        $owner = User::query()->where('username', 'sekalori')->firstOrFail();
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => 'owner@sekalori.test',
+            'password' => 'sekalori1234',
+        ])->assertSuccessful()->json('data.access_token');
+
+        $sourceUrl = 'https://docs.google.com/spreadsheets/d/sekalori/export?format=csv&gid=2117219189';
+        $config = app(SettingsManager::class)->get($company->id, 'pos', 'catering_form_import');
+        $config['source_url'] = $sourceUrl;
+        app(SettingsManager::class)->set($company->id, 'pos', 'catering_form_import', $config, null, $owner->id);
+
+        Http::fake([
+            'docs.google.com/*' => Http::response(importCsv([
+                'Timestamp',
+                'Nama Lengkap',
+                'Nomor WhatsApp',
+                'Alamat Pengiriman',
+                'Jenis Menu',
+                'Batch Pengiriman',
+                'Metode Pembayaran',
+                'Bukti Transfer',
+                'Catatan',
+            ], [
+                ['2026-06-01 09:15:00', 'Budi Santoso', '+628123456789', 'Jl Sekalori 1', 'Indonesian Local', 'Batch 1 (09:00-11:00)', 'Transfer Bank', 'https://drive.google.test/proof-1', 'Tanpa sambal'],
+            ]), 200, ['Content-Type' => 'text/csv']),
+        ]);
+
+        $preview = $this->withToken($token)->withHeader('X-Company-Id', (string) $company->id)
+            ->postJson('/api/v1/pos/sales/imports/configured/preview')
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.kind', 'pos_catering_orders')
+            ->assertJsonPath('data.import.source', 'url')
+            ->assertJsonPath('data.import.status', 'previewed')
+            ->assertJsonPath('data.import.error_count', 0)
+            ->assertJsonPath('data.rows.0.normalized.branch_code', 'MAIN')
+            ->assertJsonPath('data.rows.0.normalized.customer_name', 'Budi Santoso')
+            ->assertJsonPath('data.rows.0.normalized.customer_phone', '+628123456789')
+            ->assertJsonPath('data.rows.0.normalized.fulfilment_date', '2026-06-02')
+            ->assertJsonPath('data.rows.0.normalized.fulfilment_time_window', 'Batch 1 (09:00-11:00)')
+            ->assertJsonPath('data.rows.0.normalized.sku', 'SKL-BND-IDN')
+            ->assertJsonPath('data.rows.0.normalized.quantity', 1)
+            ->assertJsonPath('data.rows.0.normalized.payment_method', 'transfer')
+            ->assertJsonPath('data.rows.0.normalized.payment_reference', 'https://drive.google.test/proof-1')
+            ->json('data');
+
+        expect($preview['rows'][0]['normalized']['order_reference'])->toStartWith('GFORM-');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $company->id)
+            ->postJson("/api/v1/pos/sales/imports/{$preview['import']['id']}/commit")
+            ->assertAccepted()
+            ->assertJsonPath('data.import.status', 'completed')
+            ->assertJsonPath('data.import.created_count', 1);
+
+        $sale = Sale::query()
+            ->with(['payments', 'register'])
+            ->where('company_id', $company->id)
+            ->where('external_reference', $preview['rows'][0]['normalized']['order_reference'])
+            ->firstOrFail();
+        $partner = Partner::query()->where('company_id', $company->id)->where('phone', '+628123456789')->first();
+
+        expect($sale->status)->toBe('confirmed')
+            ->and($sale->type)->toBe('catering')
+            ->and($sale->source_channel)->toBe('google_form')
+            ->and($sale->fulfilment_date->toDateString())->toBe('2026-06-02')
+            ->and($sale->fulfilment_time_window)->toBe('Batch 1 (09:00-11:00)')
+            ->and($sale->amount_paid)->toBe($sale->total)
+            ->and($sale->register?->code)->toBe('GFORM-IMPORT')
+            ->and($partner)->not->toBeNull()
+            ->and($sale->payments)->toHaveCount(1)
+            ->and($sale->payments->first()->method)->toBe('transfer')
+            ->and($sale->payments->first()->reference)->toBe('https://drive.google.test/proof-1');
+    });
+
+    it('marks configured SEKALORI Google Form rows invalid when menu type is unmapped', function (): void {
+        $this->seed(DatabaseSeeder::class);
+
+        $company = Company::query()->where('slug', 'sekalori')->firstOrFail();
+        $owner = User::query()->where('username', 'sekalori')->firstOrFail();
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => 'owner@sekalori.test',
+            'password' => 'sekalori1234',
+        ])->assertSuccessful()->json('data.access_token');
+
+        $sourceUrl = 'https://docs.google.com/spreadsheets/d/sekalori/export?format=csv&gid=2117219189';
+        $config = app(SettingsManager::class)->get($company->id, 'pos', 'catering_form_import');
+        $config['source_url'] = $sourceUrl;
+        app(SettingsManager::class)->set($company->id, 'pos', 'catering_form_import', $config, null, $owner->id);
+
+        Http::fake([
+            'docs.google.com/*' => Http::response(importCsv([
+                'Timestamp',
+                'Nama Lengkap',
+                'Nomor WhatsApp',
+                'Alamat Pengiriman',
+                'Jenis Menu',
+                'Batch Pengiriman',
+                'Metode Pembayaran',
+                'Bukti Transfer',
+                'Catatan',
+            ], [
+                ['2026-06-01 09:15:00', 'Bad Menu', '+628000000000', 'Jl Sekalori 2', 'Korean', 'Batch 2 (13:00-15:00)', 'COD', '', ''],
+            ]), 200, ['Content-Type' => 'text/csv']),
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $company->id)
+            ->postJson('/api/v1/pos/sales/imports/configured/preview')
+            ->assertSuccessful()
+            ->assertJsonPath('data.import.status', 'invalid')
+            ->assertJsonPath('data.import.error_count', 1)
+            ->assertJsonPath('data.rows.0.errors.menu_type.0', 'Menu type is not configured.');
+    });
+
+    it('rejects configured Google Form preview for non-SEKALORI companies', function (): void {
+        [, $token, $companyId] = inventoryActor();
+
+        app(SettingsManager::class)->set($companyId, 'pos', 'catering_form_import', [
+            'source_url' => 'https://docs.google.com/spreadsheets/d/example/export?format=csv&gid=0',
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/pos/sales/imports/configured/preview')
+            ->assertForbidden();
+    });
+
     it('previews and commits a confirmed catering sale from a CSV upload', function (): void {
         [, $token, $companyId] = inventoryActor();
         pricedImportVariant($token, $companyId, 'SKL-IMP-BOX', 125000);

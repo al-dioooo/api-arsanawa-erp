@@ -42,6 +42,9 @@ class SekaloriInventoryDemoSeeder extends Seeder
         $nasiBox = $this->category($company->id, 'Nasi Box', $catering, 10, $owner->id);
         $regular = $this->category($company->id, 'Regular', $nasiBox, 10, $owner->id);
         $premium = $this->category($company->id, 'Premium', $nasiBox, 20, $owner->id);
+        $indonesianLocal = $this->category($company->id, 'Indonesian Local', $catering, 30, $owner->id);
+        $western = $this->category($company->id, 'Western', $catering, 40, $owner->id);
+        $japanese = $this->category($company->id, 'Japanese', $catering, 50, $owner->id);
         $beverage = $this->category($company->id, 'Beverage', null, 20, $owner->id);
         $bottledDrink = $this->category($company->id, 'Bottled Drink', $beverage, 10, $owner->id);
         $addOn = $this->category($company->id, 'Add-on', null, 30, $owner->id);
@@ -87,6 +90,39 @@ class SekaloriInventoryDemoSeeder extends Seeder
                 'units' => [
                     ['sku' => 'SKL-NB-PRM-25-DAG', 'name' => 'Nasi Box Premium 25 Pax Daging', 'price' => 1250000, 'cost' => 760000, 'qty' => 25, 'variants' => ['25-pax', 'nasi-liwet', 'daging', 'spicy']],
                     ['sku' => 'SKL-NB-PRM-50-DAG', 'name' => 'Nasi Box Premium 50 Pax Daging', 'price' => 2400000, 'cost' => 1450000, 'qty' => 12, 'variants' => ['50-pax', 'nasi-liwet', 'daging', 'spicy']],
+                ],
+            ],
+            [
+                'name' => 'Indonesian Local Bundle',
+                'category' => $indonesianLocal,
+                'uom' => $uoms['BOX'],
+                'units' => [
+                    ['sku' => 'SKL-BND-IDN', 'name' => 'Indonesian Local Catering Bundle', 'price' => 100000, 'cost' => 65000, 'qty' => 80, 'variants' => []],
+                    ['sku' => 'SKL-IDN-CMP-01', 'name' => 'Nasi Uduk Component', 'price' => 18000, 'cost' => 9000, 'qty' => 120, 'variants' => []],
+                    ['sku' => 'SKL-IDN-CMP-02', 'name' => 'Ayam Bakar Component', 'price' => 42000, 'cost' => 26000, 'qty' => 90, 'variants' => []],
+                    ['sku' => 'SKL-IDN-CMP-03', 'name' => 'Sayur Asem Component', 'price' => 15000, 'cost' => 7000, 'qty' => 100, 'variants' => []],
+                ],
+            ],
+            [
+                'name' => 'Western Bundle',
+                'category' => $western,
+                'uom' => $uoms['BOX'],
+                'units' => [
+                    ['sku' => 'SKL-BND-WST', 'name' => 'Western Catering Bundle', 'price' => 125000, 'cost' => 78000, 'qty' => 70, 'variants' => []],
+                    ['sku' => 'SKL-WST-CMP-01', 'name' => 'Roasted Chicken Component', 'price' => 52000, 'cost' => 31000, 'qty' => 90, 'variants' => []],
+                    ['sku' => 'SKL-WST-CMP-02', 'name' => 'Mashed Potato Component', 'price' => 24000, 'cost' => 11000, 'qty' => 110, 'variants' => []],
+                    ['sku' => 'SKL-WST-CMP-03', 'name' => 'Garden Salad Component', 'price' => 22000, 'cost' => 10000, 'qty' => 100, 'variants' => []],
+                ],
+            ],
+            [
+                'name' => 'Japanese Bundle',
+                'category' => $japanese,
+                'uom' => $uoms['BOX'],
+                'units' => [
+                    ['sku' => 'SKL-BND-JPN', 'name' => 'Japanese Catering Bundle', 'price' => 150000, 'cost' => 92000, 'qty' => 60, 'variants' => []],
+                    ['sku' => 'SKL-JPN-CMP-01', 'name' => 'Chicken Katsu Component', 'price' => 58000, 'cost' => 34000, 'qty' => 80, 'variants' => []],
+                    ['sku' => 'SKL-JPN-CMP-02', 'name' => 'Sushi Roll Component', 'price' => 46000, 'cost' => 26000, 'qty' => 70, 'variants' => []],
+                    ['sku' => 'SKL-JPN-CMP-03', 'name' => 'Miso Soup Component', 'price' => 18000, 'cost' => 8000, 'qty' => 100, 'variants' => []],
                 ],
             ],
             [

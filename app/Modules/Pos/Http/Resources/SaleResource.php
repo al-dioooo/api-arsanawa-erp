@@ -26,6 +26,7 @@ class SaleResource extends JsonResource
             'external_api_key_id' => $this->external_api_key_id,
             'order_date' => $this->order_date?->toDateString(),
             'fulfilment_date' => $this->fulfilment_date?->toDateString(),
+            'fulfilment_time_window' => $this->fulfilment_time_window,
             'delivery_address' => $this->delivery_address,
             'currency_id' => $this->currency_id,
             'exchange_rate' => $this->exchange_rate,

@@ -83,6 +83,34 @@ class DemoCompanySeeder extends Seeder
         $settings = app(SettingsManager::class);
 
         $settings->set($company->id, 'pos', 'catering_only', true, null, $owner->id);
+        $settings->set($company->id, 'pos', 'catering_form_import', [
+            'source_url' => 'https://docs.google.com/spreadsheets/d/1SXmxOwiaxiKpl9r-JmlKV-1-0xIhS0EPaZK7aCkQAEM/export?format=csv&gid=2117219189',
+            'field_map' => [
+                'timestamp' => 'Timestamp',
+                'customer_name' => 'Nama Lengkap',
+                'customer_phone' => 'Nomor WhatsApp',
+                'delivery_address' => 'Alamat Pengiriman',
+                'menu_type' => 'Jenis Menu',
+                'fulfilment_time_window' => 'Batch Pengiriman',
+                'payment_method' => 'Metode Pembayaran',
+                'payment_reference' => 'Bukti Transfer',
+                'notes' => 'Catatan',
+            ],
+            'menu_type_bundle_skus' => [
+                'Indonesian Local' => 'SKL-BND-IDN',
+                'Western' => 'SKL-BND-WST',
+                'Japanese' => 'SKL-BND-JPN',
+            ],
+            'default_branch_code' => 'MAIN',
+            'default_quantity' => 1,
+            'fulfilment_date_rule' => 'timestamp_plus_one_day',
+            'payment_method_map' => [
+                'Transfer Bank' => 'transfer',
+                'E-Wallet' => 'qris',
+                'COD' => null,
+            ],
+            'default_import_register_code' => 'GFORM-IMPORT',
+        ], null, $owner->id);
         $settings->set($company->id, 'inventory', 'hide_catering_restricted_features', true, null, $owner->id);
     }
 

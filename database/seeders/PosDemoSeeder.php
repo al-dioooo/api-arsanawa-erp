@@ -48,11 +48,23 @@ class PosDemoSeeder extends Seeder
         );
 
         if ($cashAccount !== null) {
-            Register::firstOrCreate(
+            Register::updateOrCreate(
                 ['company_id' => $company->id, 'code' => 'HQ-01'],
                 [
                     'branch_id' => $branch->id,
                     'name' => 'SEKALORI HQ Register',
+                    'cash_account_id' => $cashAccount->id,
+                    'is_active' => true,
+                    'created_by' => $userId,
+                    'updated_by' => $userId,
+                ],
+            );
+
+            Register::updateOrCreate(
+                ['company_id' => $company->id, 'code' => 'GFORM-IMPORT'],
+                [
+                    'branch_id' => $branch->id,
+                    'name' => 'SEKALORI Google Form Import Register',
                     'cash_account_id' => $cashAccount->id,
                     'is_active' => true,
                     'created_by' => $userId,
