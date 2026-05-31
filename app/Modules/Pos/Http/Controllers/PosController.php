@@ -141,8 +141,6 @@ class PosController extends Controller
 
     public function completeSale(CompleteSaleRequest $request, CompleteSale $action, int $sale): JsonResponse
     {
-        $this->abortIfCateringOnly($request);
-
         $completed = $action->execute($this->resolveSale($request, $sale), $request->user());
 
         return $this->success(
