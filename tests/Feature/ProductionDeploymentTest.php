@@ -30,6 +30,7 @@ describe('production deployment artifacts', function () {
         expect($env)->toContain('APP_ENV=production')
             ->and($env)->toContain('APP_DEBUG=false')
             ->and($env)->toContain('FRONTEND_URL=https://arsanawa-erp.vercel.app')
+            ->and($env)->toContain('CORS_ALLOWED_ORIGINS=https://arsanawa-erp.vercel.app')
             ->and($env)->toContain('DB_CONNECTION=pgsql')
             ->and($env)->toContain('DB_SSLMODE=require')
             ->and($env)->toContain('postgres.temebxcxioszcnwycwxj')
@@ -45,6 +46,26 @@ describe('production deployment artifacts', function () {
 });
 
 describe('production cors', function () {
+    it('normalizes deployment CORS origins from the dedicated environment value', function () {
+        $previousCorsOrigins = getenv('CORS_ALLOWED_ORIGINS');
+        $previousFrontendUrl = getenv('FRONTEND_URL');
+
+        putenv('CORS_ALLOWED_ORIGINS=https://arsanawa-erp.vercel.app/, https://preview.example.com/');
+        putenv('FRONTEND_URL=https://password-reset.example.com');
+
+        try {
+            $cors = require base_path('config/cors.php');
+        } finally {
+            putenv($previousCorsOrigins === false ? 'CORS_ALLOWED_ORIGINS' : "CORS_ALLOWED_ORIGINS={$previousCorsOrigins}");
+            putenv($previousFrontendUrl === false ? 'FRONTEND_URL' : "FRONTEND_URL={$previousFrontendUrl}");
+        }
+
+        expect($cors['allowed_origins'])->toBe([
+            'https://arsanawa-erp.vercel.app',
+            'https://preview.example.com',
+        ]);
+    });
+
     it('allows the Vercel frontend origin for API requests', function () {
         config()->set('cors.allowed_origins', ['https://arsanawa-erp.vercel.app']);
 
