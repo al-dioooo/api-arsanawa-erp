@@ -1,0 +1,121 @@
+<?php
+
+use App\Modules\Finance\Exports\ExpenseExport;
+use App\Modules\Finance\Exports\IncomeExport;
+use App\Modules\Finance\Models\Payment;
+use App\Modules\Partners\Models\Partner;
+use App\Modules\Pos\Models\Sale;
+use Database\Seeders\CurrencySeeder;
+use Spatie\Permission\PermissionRegistrar;
+
+beforeEach(function (): void {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    setPermissionsTeamId(null);
+    $this->seed(CurrencySeeder::class);
+});
+
+function makePayment(int $companyId, int $cashAccountId, string $type, string $amount, string $status = 'posted'): Payment
+{
+    $partner = Partner::create([
+        'company_id' => $companyId,
+        'type' => $type === 'inbound' ? 'customer' : 'vendor',
+        'name' => $type === 'inbound' ? 'Acme Corp' : 'Supplier Inc',
+        'code' => 'PRT-'.uniqid(),
+        'status' => 'active',
+    ]);
+
+    return Payment::create([
+        'company_id' => $companyId,
+        'partner_id' => $partner->id,
+        'payment_number' => 'PAY-'.uniqid(),
+        'payment_type' => $type,
+        'payment_date' => '2026-06-10',
+        'payment_method' => 'cash',
+        'amount' => $amount,
+        'currency_id' => 1,
+        'exchange_rate' => '1.00000000',
+        'cash_account_id' => $cashAccountId,
+        'status' => $status,
+    ]);
+}
+
+function makeCompletedSale(int $companyId, int $branchId, string $total): Sale
+{
+    return Sale::create([
+        'company_id' => $companyId,
+        'branch_id' => $branchId,
+        'sale_number' => 'POS-'.uniqid(),
+        'type' => 'pos',
+        'customer_name' => 'Walk-in',
+        'status' => 'completed',
+        'order_date' => '2026-06-12',
+        'completed_at' => '2026-06-12 10:00:00',
+        'currency_id' => 1,
+        'exchange_rate' => '1.00000000',
+        'total' => $total,
+    ]);
+}
+
+describe('Income export', function () {
+    it('unions posted inbound payments with completed POS sales', function (): void {
+        [, $token, $companyId, $branchId] = financeActor();
+        $cash = createAccount($token, $companyId, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+
+        makePayment($companyId, $cash, 'inbound', '100000.0000');
+        makePayment($companyId, $cash, 'outbound', '50000.0000'); // must NOT leak in
+        makeCompletedSale($companyId, $branchId, '250000.0000');
+
+        $rows = (new IncomeExport($companyId))->collection();
+
+        expect($rows)->toHaveCount(2);
+        expect($rows->sum('amount'))->toBe(350000.0);
+        expect($rows->pluck('source')->sort()->values()->all())->toBe(['POS Sale', 'Payment']);
+    });
+
+    it('streams a valid xlsx download', function (): void {
+        [, $token, $companyId] = financeActor();
+        createAccount($token, $companyId, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->get('/api/v1/finance/exports/income.xlsx')
+            ->assertOk()
+            ->assertHeader(
+                'content-type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            );
+    });
+
+    it('rejects non-xlsx formats via the route constraint', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->get('/api/v1/finance/exports/income.csv')
+            ->assertNotFound();
+    });
+
+    it('requires authentication', function (): void {
+        $this->getJson('/api/v1/finance/exports/income.xlsx')->assertUnauthorized();
+    });
+});
+
+describe('Expense export', function () {
+    it('returns only posted outbound payments, scoped to the company', function (): void {
+        // Create both actors up front: company-scoped writes mutate the Spatie
+        // permission team context, which would otherwise break a later actor.
+        [, $tokenA, $companyA] = financeActor();
+        [, $tokenB, $companyB] = financeActor();
+
+        $cashA = createAccount($tokenA, $companyA, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+        $cashB = createAccount($tokenB, $companyB, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+
+        makePayment($companyA, $cashA, 'outbound', '70000.0000');
+        makePayment($companyA, $cashA, 'outbound', '30000.0000');
+        makePayment($companyA, $cashA, 'inbound', '999999.0000'); // must NOT leak in
+        makePayment($companyB, $cashB, 'outbound', '11111.0000'); // other company
+
+        $rows = (new ExpenseExport($companyA))->collection();
+
+        expect($rows)->toHaveCount(2);
+        expect($rows->sum('amount'))->toBe(100000.0);
+    });
+});

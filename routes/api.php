@@ -2,6 +2,7 @@
 
 use App\Modules\Authentication\Http\Controllers\AuthenticationController;
 use App\Modules\Finance\Http\Controllers\FinanceController;
+use App\Modules\Finance\Http\Controllers\FinanceExportController;
 use App\Modules\Identity\Http\Controllers\IdentityController;
 use App\Modules\Inventory\Http\Controllers\ExternalProductController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
@@ -101,6 +102,7 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::get('currencies', [PlatformController::class, 'currencies'])->name('currencies.index');
         Route::get('settings', [PlatformController::class, 'settings'])->name('settings.index');
         Route::put('settings', [PlatformController::class, 'updateSettings'])->name('settings.update');
+        Route::post('whatsapp/test', [PlatformController::class, 'sendWhatsAppTest'])->name('whatsapp.test');
     });
 
 Route::middleware(['auth:api', 'organization.company-context'])
@@ -275,6 +277,12 @@ Route::middleware(['auth:api', 'organization.company-context'])
         // Reports
         Route::get('reports/trial-balance', [FinanceController::class, 'trialBalance'])->name('reports.trial-balance');
         Route::get('reports/account-ledger', [FinanceController::class, 'accountLedger'])->name('reports.account-ledger');
+
+        // Exports (XLSX)
+        Route::get('exports/income.{format}', [FinanceExportController::class, 'income'])
+            ->where('format', 'xlsx')->name('exports.income');
+        Route::get('exports/expense.{format}', [FinanceExportController::class, 'expense'])
+            ->where('format', 'xlsx')->name('exports.expense');
 
         // Approval Matrices
         Route::get('approval-matrices', [FinanceController::class, 'approvalMatrices'])->name('approval-matrices.index');

@@ -48,4 +48,19 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        // Active driver: "fonnte" (live) or "log" (local/test, no network).
+        'driver' => env('WHATSAPP_DRIVER', 'log'),
+
+        // Global kill-switch; per-company settings can still disable individually.
+        'enabled' => env('WHATSAPP_ENABLED', false),
+
+        'fonnte' => [
+            'base_url' => env('WHATSAPP_FONNTE_BASE_URL', 'https://api.fonnte.com/send'),
+            'token' => env('WHATSAPP_FONNTE_TOKEN'),
+            'sender' => env('WHATSAPP_FONNTE_SENDER'),
+            'timeout' => (int) env('WHATSAPP_FONNTE_TIMEOUT', 15),
+        ],
+    ],
+
 ];

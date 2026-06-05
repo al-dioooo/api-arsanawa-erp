@@ -4,6 +4,7 @@ namespace App\Modules\Pos\Models;
 
 use App\Modules\Finance\Models\JournalEntry;
 use App\Modules\Partners\Models\Partner;
+use App\Modules\Platform\Support\PhoneNormalizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -111,5 +112,14 @@ class Sale extends Model
     public function scopeForCompany(Builder $query, int $companyId): Builder
     {
         return $query->where('company_id', $companyId);
+    }
+
+    /**
+     * Resolve the customer's WhatsApp number (from the linked partner) in
+     * normalised international form, or null when none is available.
+     */
+    public function recipientPhone(): ?string
+    {
+        return PhoneNormalizer::normalize($this->partner?->phone);
     }
 }

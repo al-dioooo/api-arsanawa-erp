@@ -10,7 +10,10 @@ use App\Modules\Platform\Http\Requests\ListSettingsRequest;
 use App\Modules\Platform\Http\Requests\UpsertSettingsRequest;
 use App\Modules\Platform\Http\Resources\CurrencyResource;
 use App\Modules\Platform\Http\Resources\SettingResource;
+use App\Modules\Platform\Services\WhatsApp\WhatsAppService;
+use App\Modules\Platform\Support\PhoneNormalizer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PlatformController extends Controller
 {
@@ -43,6 +46,35 @@ class PlatformController extends Controller
         return $this->success(
             ['settings' => SettingResource::collection(collect($settings))],
             __('Settings updated.'),
+        );
+    }
+
+    public function sendWhatsAppTest(Request $request, WhatsAppService $whatsApp): JsonResponse
+    {
+        $validated = $request->validate([
+            'to' => ['required', 'string', 'max:32'],
+            'message' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $to = PhoneNormalizer::normalize($validated['to']);
+
+        if ($to === null) {
+            return $this->error(__('Enter a valid phone number.'), 422);
+        }
+
+        $body = $validated['message'] ?? __('This is a test WhatsApp message from Arsanawa ERP.');
+
+        $message = $whatsApp->send($companyId, $to, $body, null, $request->user()?->id);
+
+        return $this->success(
+            [
+                'status' => $message->status,
+                'provider' => $message->provider,
+                'provider_message_id' => $message->provider_message_id,
+                'error' => $message->error,
+            ],
+            __('WhatsApp test dispatched.'),
         );
     }
 }

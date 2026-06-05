@@ -1615,6 +1615,94 @@ paths:
       security:
         -
           bearerAuth: {  }
+  '/api/v1/finance/exports/income.{format}':
+    get:
+      operationId: finance_exports_income
+      tags:
+        - Finance
+      summary: api.v1.finance.exports.income
+      parameters:
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [xlsx]
+        -
+          name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        -
+          name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+  '/api/v1/finance/exports/expense.{format}':
+    get:
+      operationId: finance_exports_expense
+      tags:
+        - Finance
+      summary: api.v1.finance.exports.expense
+      parameters:
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [xlsx]
+        -
+          name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        -
+          name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/finance/reports/trial-balance:
     get:
       operationId: finance_reports_trial_balance
@@ -5153,6 +5241,44 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/platform/whatsapp/test:
+    post:
+      operationId: platform_whatsapp_test
+      tags:
+        - Platform
+      summary: api.v1.platform.whatsapp.test
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: string
+                message:
+                  type: string
+              required:
+                - to
   /api/v1/pos/dashboard:
     get:
       operationId: pos_dashboard_show

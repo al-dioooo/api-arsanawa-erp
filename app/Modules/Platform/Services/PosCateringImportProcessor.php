@@ -4,6 +4,7 @@ namespace App\Modules\Platform\Services;
 
 use App\Modules\Inventory\Models\ProductVariant;
 use App\Modules\Partners\Actions\FindOrCreateCustomer;
+use App\Modules\Pos\Events\SaleImported;
 use App\Modules\Pos\Models\Register;
 use App\Modules\Pos\Models\Sale;
 use App\Modules\Pos\Models\SaleLine;
@@ -171,7 +172,14 @@ class PosCateringImportProcessor
                     }
                 }
 
-                $exists ? $updated++ : $created++;
+                if ($exists) {
+                    $updated++;
+                } else {
+                    $created++;
+                    // Triggers a WhatsApp receipt; the listener defers the actual
+                    // send until this transaction commits.
+                    event(new SaleImported($sale->id));
+                }
             }
         });
 
