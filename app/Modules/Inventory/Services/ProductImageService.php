@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Inventory\Models\Product;
 use App\Modules\Inventory\Models\ProductImage;
 use App\Modules\Inventory\Models\ProductUnit;
+use App\Support\SupabaseStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class ProductImageService
 {
+    public function __construct(private readonly SupabaseStorage $supabaseStorage) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -34,9 +37,9 @@ class ProductImageService
 
         return $imageable->images()->create([
             'company_id' => $companyId,
-            'disk' => 'public',
+            'disk' => $payload['disk'],
             'path' => $payload['path'],
-            'url' => Storage::disk('public')->url($payload['path']),
+            'url' => $payload['url'],
             'original_url' => $payload['original_url'] ?? null,
             'alt_text' => $data['alt_text'] ?? null,
             'mime_type' => $payload['mime_type'],
@@ -51,7 +54,7 @@ class ProductImageService
     }
 
     /**
-     * @return array{path: string, mime_type: string|null, size_bytes: int, width: int|null, height: int|null}
+     * @return array{disk: string, path: string, url: string, mime_type: string|null, size_bytes: int, width: int|null, height: int|null}
      */
     private function storeUploadedImage(UploadedFile $file, int $companyId): array
     {
@@ -62,11 +65,13 @@ class ProductImageService
         }
 
         $path = $this->path($companyId, $file->extension() ?: 'jpg');
-        Storage::disk('public')->put($path, $contents);
+        $stored = $this->storeImageObject($path, $contents, $file->getMimeType());
         [$width, $height] = $this->dimensions($contents);
 
         return [
+            'disk' => $stored['disk'],
             'path' => $path,
+            'url' => $stored['url'],
             'mime_type' => $file->getMimeType(),
             'size_bytes' => strlen($contents),
             'width' => $width,
@@ -75,7 +80,7 @@ class ProductImageService
     }
 
     /**
-     * @return array{path: string, original_url: string, mime_type: string|null, size_bytes: int, width: int|null, height: int|null}
+     * @return array{disk: string, path: string, url: string, original_url: string, mime_type: string|null, size_bytes: int, width: int|null, height: int|null}
      */
     private function copyRemoteImage(string $url, int $companyId): array
     {
@@ -109,10 +114,12 @@ class ProductImageService
         };
 
         $path = $this->path($companyId, $extension);
-        Storage::disk('public')->put($path, $contents);
+        $stored = $this->storeImageObject($path, $contents, $mimeType);
 
         return [
+            'disk' => $stored['disk'],
             'path' => $path,
+            'url' => $stored['url'],
             'original_url' => $url,
             'mime_type' => $mimeType,
             'size_bytes' => strlen($contents),
@@ -153,5 +160,28 @@ class ProductImageService
     private function path(int $companyId, string $extension): string
     {
         return 'inventory/product-images/'.$companyId.'/'.Str::uuid().'.'.$extension;
+    }
+
+    /**
+     * @return array{disk: string, url: string}
+     */
+    private function storeImageObject(string $path, string $contents, ?string $mimeType): array
+    {
+        if ((string) config('filesystems.default') === 'supabase') {
+            $bucket = (string) config('services.supabase.storage.product_images_bucket');
+            $this->supabaseStorage->put($bucket, $path, $contents, $mimeType);
+
+            return [
+                'disk' => 'supabase',
+                'url' => $this->supabaseStorage->publicUrl($bucket, $path),
+            ];
+        }
+
+        Storage::disk('public')->put($path, $contents);
+
+        return [
+            'disk' => 'public',
+            'url' => Storage::disk('public')->url($path),
+        ];
     }
 }

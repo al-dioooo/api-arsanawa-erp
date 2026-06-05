@@ -7,6 +7,7 @@ use App\Modules\Organization\Models\Company;
 use App\Modules\Platform\Jobs\CommitSpreadsheetImport;
 use App\Modules\Platform\Models\ImportBatch;
 use App\Modules\Platform\Models\ImportRow;
+use App\Support\SupabaseStorage;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -30,7 +31,10 @@ class SpreadsheetImportService
 
     private const CONFIGURED_POS_SHEET = 'google-sheet.csv';
 
-    public function __construct(private readonly SettingsManager $settings) {}
+    public function __construct(
+        private readonly SettingsManager $settings,
+        private readonly SupabaseStorage $supabaseStorage,
+    ) {}
 
     /**
      * @return list<string>
@@ -301,7 +305,13 @@ class SpreadsheetImportService
 
         $extension = strtolower($file->getClientOriginalExtension() ?: 'csv');
         $path = "imports/{$companyId}/".Str::uuid().'.'.$extension;
-        Storage::put($path, file_get_contents($file->getRealPath()));
+        $contents = file_get_contents($file->getRealPath());
+
+        if ($contents === false) {
+            throw ValidationException::withMessages(['file' => [__('Unable to read uploaded spreadsheet file.')]]);
+        }
+
+        $this->storeImportSource($path, $contents, $file->getMimeType());
 
         return [
             'path' => $path,
@@ -338,7 +348,7 @@ class SpreadsheetImportService
         }
 
         $path = "imports/{$companyId}/".Str::uuid().'.csv';
-        Storage::put($path, $response->body());
+        $this->storeImportSource($path, $response->body(), $response->header('Content-Type'));
 
         return [
             'path' => $path,
@@ -395,7 +405,7 @@ class SpreadsheetImportService
             ]];
         }
 
-        $spreadsheet = IOFactory::load(Storage::path($path));
+        $spreadsheet = IOFactory::load($this->localSpreadsheetPath($path));
         $sheets = [];
 
         foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
@@ -424,7 +434,7 @@ class SpreadsheetImportService
             return $this->readCsv($path);
         }
 
-        $spreadsheet = IOFactory::load(Storage::path($path));
+        $spreadsheet = IOFactory::load($this->localSpreadsheetPath($path));
         $sheet = $spreadsheet->getSheetByName($sheetName);
 
         if ($sheet === null) {
@@ -455,7 +465,7 @@ class SpreadsheetImportService
      */
     private function readCsv(string $path): Collection
     {
-        $contents = Storage::get($path);
+        $contents = $this->readImportSource($path);
         $tmp = fopen('php://temp', 'r+');
         fwrite($tmp, $contents);
         rewind($tmp);
@@ -484,6 +494,51 @@ class SpreadsheetImportService
         fclose($tmp);
 
         return collect($rows);
+    }
+
+    private function storeImportSource(string $path, string $contents, ?string $mimeType): void
+    {
+        if ($this->usesSupabaseStorage()) {
+            $this->supabaseStorage->put($this->importsBucket(), $path, $contents, $mimeType);
+
+            return;
+        }
+
+        Storage::put($path, $contents);
+    }
+
+    private function readImportSource(string $path): string
+    {
+        if ($this->usesSupabaseStorage()) {
+            return $this->supabaseStorage->get($this->importsBucket(), $path);
+        }
+
+        return Storage::get($path);
+    }
+
+    private function localSpreadsheetPath(string $path): string
+    {
+        if (! $this->usesSupabaseStorage()) {
+            return Storage::path($path);
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $tmp = tempnam(sys_get_temp_dir(), 'arsanawa-import-');
+        $localPath = $extension !== '' ? "{$tmp}.{$extension}" : $tmp;
+
+        file_put_contents($localPath, $this->readImportSource($path));
+
+        return $localPath;
+    }
+
+    private function importsBucket(): string
+    {
+        return (string) config('services.supabase.storage.imports_bucket');
+    }
+
+    private function usesSupabaseStorage(): bool
+    {
+        return (string) config('filesystems.default') === 'supabase';
     }
 
     /**

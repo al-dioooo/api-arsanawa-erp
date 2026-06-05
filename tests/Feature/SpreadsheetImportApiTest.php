@@ -12,6 +12,7 @@ use App\Modules\Platform\Services\SettingsManager;
 use App\Modules\Pos\Models\Sale;
 use Database\Seeders\CurrencySeeder;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
@@ -97,6 +98,61 @@ describe('spreadsheet import templates', function (): void {
             ->get('/api/v1/inventory/products/imports/template.xlsx')
             ->assertSuccessful()
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+});
+
+describe('production import storage', function (): void {
+    it('stores and reads uploaded CSV imports through Supabase Storage', function (): void {
+        config()->set('filesystems.default', 'supabase');
+        config()->set('services.supabase.url', 'https://temebxcxioszcnwycwxj.supabase.co');
+        config()->set('services.supabase.service_role_key', 'test-service-role-key');
+        config()->set('services.supabase.storage.imports_bucket', 'arsanawa-imports');
+
+        $csv = importCsv([
+            'product_name',
+            'product_description',
+            'category_path',
+            'brand_name',
+            'base_uom_code',
+            'sku',
+            'product_unit_name',
+            'barcode',
+            'variant_values',
+            'price_list_name',
+            'currency_code',
+            'price',
+            'effective_from',
+            'branch_code',
+            'opening_quantity',
+            'unit_cost',
+            'batch_number',
+            'received_at',
+            'expiry_date',
+            'production_date',
+            'status',
+            'track_stock',
+        ], [
+            ['Nasi Box Supabase', '', 'Catering', 'SEKALORI', 'BOX', 'SUPA-CSV-1', 'Nasi Box Supabase', '', '', 'Retail', 'IDR', '25000', '2026-06-01', 'MAIN', '0', '0', '', '', '', '', 'active', 'true'],
+        ]);
+
+        Http::fake([
+            'https://temebxcxioszcnwycwxj.supabase.co/storage/v1/object/arsanawa-imports/imports/*' => Http::sequence()
+                ->push('', 200)
+                ->push($csv, 200, ['Content-Type' => 'text/csv']),
+        ]);
+
+        [, $token, $companyId] = inventoryActor();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post('/api/v1/inventory/products/imports/inspect', [
+                'file' => spreadsheetUpload('inventory.csv', $csv),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.import.storage_disk', 'supabase')
+            ->assertJsonPath('data.sheets.0.name', 'inventory.csv')
+            ->assertJsonPath('data.sheets.0.supported', true);
+
+        Http::assertSentCount(2);
     });
 });
 
@@ -282,7 +338,7 @@ describe('POS catering spreadsheet imports', function (): void {
         $config['source_url'] = $sourceUrl;
         app(SettingsManager::class)->set($company->id, 'pos', 'catering_form_import', $config, null, $owner->id);
 
-        Http::fake(function (Illuminate\Http\Client\Request $request) {
+        Http::fake(function (Request $request) {
             $url = $request->url();
 
             if (str_contains($url, 'gid=0')) {

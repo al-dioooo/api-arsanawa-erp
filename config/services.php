@@ -32,6 +32,15 @@ return [
         'url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost')),
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY'),
+        'storage' => [
+            'product_images_bucket' => env('SUPABASE_STORAGE_PRODUCT_IMAGES_BUCKET', 'arsanawa-product-images'),
+            'imports_bucket' => env('SUPABASE_STORAGE_IMPORTS_BUCKET', 'arsanawa-imports'),
+        ],
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

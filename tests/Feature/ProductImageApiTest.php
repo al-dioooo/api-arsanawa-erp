@@ -61,6 +61,37 @@ function productWithPricedUnit(string $token, int $companyId, string $sku): arra
 }
 
 describe('product images', function (): void {
+    it('stores uploaded product images in Supabase Storage when configured for production', function (): void {
+        config()->set('filesystems.default', 'supabase');
+        config()->set('services.supabase.url', 'https://temebxcxioszcnwycwxj.supabase.co');
+        config()->set('services.supabase.service_role_key', 'test-service-role-key');
+        config()->set('services.supabase.storage.product_images_bucket', 'arsanawa-product-images');
+
+        Http::fake([
+            'https://temebxcxioszcnwycwxj.supabase.co/storage/v1/object/arsanawa-product-images/*' => Http::response('', 200),
+        ]);
+
+        [, $token, $companyId] = inventoryActor();
+        [$productId] = productWithPricedUnit($token, $companyId, 'IMG-SUPABASE-1');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->post("/api/v1/inventory/products/{$productId}/images", [
+                'image' => UploadedFile::fake()->image('nasi-box.jpg', 640, 480),
+                'alt_text' => 'Supabase Product Image',
+                'is_primary' => true,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.image.disk', 'supabase')
+            ->assertJsonPath('data.image.alt_text', 'Supabase Product Image');
+
+        Http::assertSent(function ($request): bool {
+            return $request->method() === 'POST'
+                && str_starts_with($request->url(), 'https://temebxcxioszcnwycwxj.supabase.co/storage/v1/object/arsanawa-product-images/inventory/product-images/')
+                && $request->hasHeader('apikey', 'test-service-role-key')
+                && $request->hasHeader('Authorization', 'Bearer test-service-role-key');
+        });
+    });
+
     it('uploads a product image and returns image metadata in product resources', function (): void {
         [, $token, $companyId] = inventoryActor();
         [$productId] = productWithPricedUnit($token, $companyId, 'IMG-PROD-1');

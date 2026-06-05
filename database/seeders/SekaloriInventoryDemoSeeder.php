@@ -194,7 +194,7 @@ class SekaloriInventoryDemoSeeder extends Seeder
                     [
                         'product_unit_id' => $productUnit->id,
                         'price' => $unitDefinition['price'],
-                        'effective_from' => now()->toDateString(),
+                        'effective_from' => '2026-01-01',
                         'created_by' => $owner->id,
                         'updated_by' => $owner->id,
                     ],

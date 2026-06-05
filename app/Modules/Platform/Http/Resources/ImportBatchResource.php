@@ -14,6 +14,7 @@ class ImportBatchResource extends JsonResource
             'company_id' => $this->company_id,
             'kind' => $this->kind,
             'source' => $this->source,
+            'storage_disk' => config('filesystems.default') === 'supabase' ? 'supabase' : 'local',
             'original_name' => $this->original_name,
             'sheets' => $this->sheets ?? [],
             'selected_sheet' => $this->selected_sheet,
