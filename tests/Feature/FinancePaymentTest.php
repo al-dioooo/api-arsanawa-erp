@@ -14,6 +14,45 @@ beforeEach(function (): void {
 });
 
 describe('Finance Payments CRUD and Validation', function () {
+    it('rejects stale frontend payment payload aliases', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Supplier Inc',
+            'code' => 'SUP-001',
+            'status' => 'active',
+        ]);
+
+        $cashAccount = createAccount($token, $companyId, [
+            'code' => '1-1010',
+            'name' => 'Cash in Hand',
+            'type' => 'asset',
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/finance/payments', [
+                'partner_id' => $partner->id,
+                'account_id' => $cashAccount,
+                'payment_type' => 'outgoing',
+                'payment_date' => '2026-05-22',
+                'payment_method' => 'cash',
+                'amount' => '500.0000',
+                'currency_id' => 1,
+                'exchange_rate' => '1.00000000',
+                'allocations' => [
+                    [
+                        'allocatable_type' => 'bill',
+                        'allocatable_id' => 123,
+                        'amount' => '500.0000',
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment_type', 'cash_account_id']);
+    });
+
     it('creates a draft inbound payment with allocations', function (): void {
         [, $token, $companyId] = financeActor();
 
