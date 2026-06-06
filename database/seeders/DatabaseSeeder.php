@@ -39,5 +39,6 @@ class DatabaseSeeder extends Seeder
         $this->call(SekaloriInventoryDemoSeeder::class);
         $this->call(FinanceDemoSeeder::class);
         $this->call(PosDemoSeeder::class);
+        $this->call(DemoTransactionSeeder::class);
     }
 }
