@@ -6,6 +6,7 @@ use App\Modules\Finance\Models\Invoice;
 use App\Modules\Inventory\Models\StockTransfer;
 use App\Modules\Partners\Models\Partner;
 use Database\Seeders\CurrencySeeder;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -125,6 +126,158 @@ describe('dashboard summaries', function (): void {
             ->assertJsonPath('data.counters.pending_approvals', 1)
             ->assertJsonPath('data.recent_activity.0.type', 'bill')
             ->assertJsonPath('data.recent_activity.1.type', 'invoice');
+    });
+
+    it('returns daily income and expense buckets for the current month by default', function (): void {
+        $this->travelTo(Carbon::parse('2026-06-15 10:00:00'));
+
+        [, $token, $companyId] = financeActor();
+
+        $customer = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'customer',
+            'name' => 'June Customer',
+            'code' => 'CUST-JUN',
+            'status' => 'active',
+        ]);
+        $vendor = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'June Vendor',
+            'code' => 'VEND-JUN',
+            'status' => 'active',
+        ]);
+
+        Invoice::create([
+            'company_id' => $companyId,
+            'invoice_number' => 'INV-JUN-05',
+            'partner_id' => $customer->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'invoice_date' => '2026-06-05',
+            'due_date' => '2026-06-30',
+            'status' => 'posted',
+            'subtotal' => 125000,
+            'tax_total' => 0,
+            'total' => 125000,
+            'amount_paid' => 0,
+        ]);
+        Invoice::create([
+            'company_id' => $companyId,
+            'invoice_number' => 'INV-MAY-31',
+            'partner_id' => $customer->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'invoice_date' => '2026-05-31',
+            'due_date' => '2026-06-30',
+            'status' => 'posted',
+            'subtotal' => 999000,
+            'tax_total' => 0,
+            'total' => 999000,
+            'amount_paid' => 0,
+        ]);
+        Bill::create([
+            'company_id' => $companyId,
+            'bill_number' => 'BILL-JUN-10',
+            'partner_id' => $vendor->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'bill_date' => '2026-06-10',
+            'due_date' => '2026-06-30',
+            'status' => 'posted',
+            'subtotal' => 45000,
+            'tax_total' => 0,
+            'total' => 45000,
+            'amount_paid' => 0,
+        ]);
+
+        $response = $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/dashboard')
+            ->assertSuccessful()
+            ->assertJsonCount(30, 'data.income_expense_series')
+            ->assertJsonPath('data.income_expense_series.0.date', '2026-06-01')
+            ->assertJsonPath('data.income_expense_series.4.date', '2026-06-05')
+            ->assertJsonPath('data.income_expense_series.9.date', '2026-06-10')
+            ->assertJsonPath('data.income_expense_series.29.date', '2026-06-30');
+
+        expect($response->json('data.income_expense_series.4.income'))->toEqual(125000.0)
+            ->and($response->json('data.income_expense_series.4.expense'))->toEqual(0.0)
+            ->and($response->json('data.income_expense_series.9.income'))->toEqual(0.0)
+            ->and($response->json('data.income_expense_series.9.expense'))->toEqual(45000.0);
+    });
+
+    it('filters finance dashboard income and expense buckets by requested date range', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $customer = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'customer',
+            'name' => 'Range Customer',
+            'code' => 'CUST-RNG',
+            'status' => 'active',
+        ]);
+        $vendor = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Range Vendor',
+            'code' => 'VEND-RNG',
+            'status' => 'active',
+        ]);
+
+        Invoice::create([
+            'company_id' => $companyId,
+            'invoice_number' => 'INV-RNG-IN',
+            'partner_id' => $customer->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'invoice_date' => '2026-06-12',
+            'due_date' => '2026-06-30',
+            'status' => 'posted',
+            'subtotal' => 210000,
+            'tax_total' => 0,
+            'total' => 210000,
+            'amount_paid' => 0,
+        ]);
+        Invoice::create([
+            'company_id' => $companyId,
+            'invoice_number' => 'INV-RNG-OUT',
+            'partner_id' => $customer->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'invoice_date' => '2026-06-20',
+            'due_date' => '2026-06-30',
+            'status' => 'posted',
+            'subtotal' => 990000,
+            'tax_total' => 0,
+            'total' => 990000,
+            'amount_paid' => 0,
+        ]);
+        Bill::create([
+            'company_id' => $companyId,
+            'bill_number' => 'BILL-RNG-IN',
+            'partner_id' => $vendor->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'bill_date' => '2026-06-14',
+            'due_date' => '2026-06-30',
+            'status' => 'posted',
+            'subtotal' => 70000,
+            'tax_total' => 0,
+            'total' => 70000,
+            'amount_paid' => 0,
+        ]);
+
+        $response = $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/dashboard?start_date=2026-06-10&end_date=2026-06-15')
+            ->assertSuccessful()
+            ->assertJsonCount(6, 'data.income_expense_series')
+            ->assertJsonPath('data.income_expense_series.0.date', '2026-06-10')
+            ->assertJsonPath('data.income_expense_series.5.date', '2026-06-15');
+
+        expect($response->json('data.income_expense_series.2.income'))->toEqual(210000.0)
+            ->and($response->json('data.income_expense_series.4.expense'))->toEqual(70000.0);
     });
 
     it('returns POS dashboard counters for registers, shifts, and open sales', function (): void {

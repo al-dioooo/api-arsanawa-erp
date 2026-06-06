@@ -124,7 +124,7 @@ class FinanceController extends Controller
     public function dashboard(ShowFinanceDashboardRequest $request, GetFinanceDashboardSummary $action): JsonResponse
     {
         return $this->success(
-            $action->execute((int) $request->attributes->get('active_company_id')),
+            $action->execute((int) $request->attributes->get('active_company_id'), $request->validated()),
             __('Finance dashboard retrieved.'),
         );
     }
@@ -510,7 +510,13 @@ class FinanceController extends Controller
     public function bills(ListBillsRequest $request, ListBills $action): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');
-        $bills = $action->execute($companyId, $request->only(['partner_id', 'status', 'per_page']));
+        $bills = $action->execute($companyId, $request->only([
+            'partner_id',
+            'status',
+            'start_date',
+            'end_date',
+            'per_page',
+        ]));
 
         return $this->success(
             [

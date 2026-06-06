@@ -19,6 +19,9 @@ class ShowFinanceDashboardRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [];
+        return [
+            'start_date' => ['sometimes', 'nullable', 'date'],
+            'end_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_date'],
+        ];
     }
 }

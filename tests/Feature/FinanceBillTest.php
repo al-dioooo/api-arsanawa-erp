@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Finance\Models\Bill;
 use App\Modules\Finance\Models\TaxRate;
 use App\Modules\Partners\Models\Partner;
 use Database\Seeders\CurrencySeeder;
@@ -181,6 +182,107 @@ describe('Finance Bills', function () {
             ->assertSuccessful()
             ->assertJsonCount(1, 'data.bills')
             ->assertJsonPath('data.bills.0.partner_id', $partner1->id);
+    });
+
+    it('filters bills by status server side', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Status Supplier',
+            'code' => 'SUP-STATUS',
+            'status' => 'active',
+        ]);
+
+        Bill::create([
+            'company_id' => $companyId,
+            'bill_number' => 'BILL-STATUS-DRAFT',
+            'partner_id' => $partner->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'bill_date' => '2026-06-01',
+            'due_date' => '2026-06-30',
+            'status' => 'draft',
+            'subtotal' => 100000,
+            'tax_total' => 0,
+            'total' => 100000,
+            'amount_paid' => 0,
+        ]);
+        Bill::create([
+            'company_id' => $companyId,
+            'bill_number' => 'BILL-STATUS-PARTIAL',
+            'partner_id' => $partner->id,
+            'currency_id' => 1,
+            'exchange_rate' => 1,
+            'bill_date' => '2026-06-02',
+            'due_date' => '2026-06-30',
+            'status' => 'partially_paid',
+            'subtotal' => 200000,
+            'tax_total' => 0,
+            'total' => 200000,
+            'amount_paid' => 50000,
+        ]);
+
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/bills?status=partially_paid')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.bills')
+            ->assertJsonPath('data.bills.0.bill_number', 'BILL-STATUS-PARTIAL')
+            ->assertJsonPath('data.bills.0.status', 'partially_paid');
+    });
+
+    it('filters bills by inclusive bill date range server side', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Date Supplier',
+            'code' => 'SUP-DATE',
+            'status' => 'active',
+        ]);
+
+        foreach ([
+            ['BILL-MAY-31', '2026-05-31'],
+            ['BILL-JUN-10', '2026-06-10'],
+            ['BILL-JUN-20', '2026-06-20'],
+            ['BILL-JUL-01', '2026-07-01'],
+        ] as [$number, $date]) {
+            Bill::create([
+                'company_id' => $companyId,
+                'bill_number' => $number,
+                'partner_id' => $partner->id,
+                'currency_id' => 1,
+                'exchange_rate' => 1,
+                'bill_date' => $date,
+                'due_date' => '2026-07-31',
+                'status' => 'posted',
+                'subtotal' => 100000,
+                'tax_total' => 0,
+                'total' => 100000,
+                'amount_paid' => 0,
+            ]);
+        }
+
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/bills?start_date=2026-06-10&end_date=2026-06-20')
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data.bills')
+            ->assertJsonPath('data.bills.0.bill_number', 'BILL-JUN-20')
+            ->assertJsonPath('data.bills.1.bill_number', 'BILL-JUN-10');
+    });
+
+    it('rejects bill list filters with an end date before the start date', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/bills?start_date=2026-06-20&end_date=2026-06-10')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['end_date']);
     });
 
     it('rejects bill referring to cross-company partner', function (): void {
