@@ -418,7 +418,13 @@ class FinanceController extends Controller
     public function invoices(ListInvoicesRequest $request, ListInvoices $action): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');
-        $invoices = $action->execute($companyId, $request->only(['partner_id', 'status', 'per_page']));
+        $invoices = $action->execute($companyId, $request->only([
+            'partner_id',
+            'status',
+            'start_date',
+            'end_date',
+            'per_page',
+        ]));
 
         return $this->success(
             [
@@ -599,7 +605,14 @@ class FinanceController extends Controller
     public function payments(ListPaymentsRequest $request, ListPayments $action): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');
-        $payments = $action->execute($companyId, $request->only(['partner_id', 'payment_type', 'status', 'per_page']));
+        $payments = $action->execute($companyId, $request->only([
+            'partner_id',
+            'payment_type',
+            'status',
+            'start_date',
+            'end_date',
+            'per_page',
+        ]));
 
         return $this->success(
             [

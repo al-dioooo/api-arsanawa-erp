@@ -169,6 +169,53 @@ describe('Finance Invoices', function () {
             ->assertJsonPath('data.invoices.0.partner_id', $partner1->id);
     });
 
+    it('filters invoices by invoice date range', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'customer',
+            'name' => 'Date Filter Customer',
+            'code' => 'CUST-DATE',
+            'status' => 'active',
+        ]);
+
+        foreach ([
+            ['date' => '2026-05-31', 'amount' => 100],
+            ['date' => '2026-06-15', 'amount' => 200],
+            ['date' => '2026-07-01', 'amount' => 300],
+        ] as $invoice) {
+            $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+                ->postJson('/api/v1/finance/invoices', [
+                    'partner_id' => $partner->id,
+                    'invoice_date' => $invoice['date'],
+                    'due_date' => '2026-07-31',
+                    'lines' => [
+                        [
+                            'description' => 'Date filtered item',
+                            'quantity' => 1,
+                            'unit_price' => $invoice['amount'],
+                        ],
+                    ],
+                ])->assertCreated();
+        }
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/invoices?start_date=2026-06-01&end_date=2026-06-30')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.invoices')
+            ->assertJsonPath('data.invoices.0.invoice_date', '2026-06-15');
+    });
+
+    it('rejects invoice list date ranges where the end date is before the start date', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/invoices?start_date=2026-06-30&end_date=2026-06-01')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['end_date']);
+    });
+
     it('rejects invoice referring to cross-company partner', function (): void {
         [, $tokenA, $companyA] = financeActor();
         [, $tokenB, $companyB] = financeActor();

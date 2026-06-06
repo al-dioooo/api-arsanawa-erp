@@ -319,6 +319,93 @@ describe('Finance Payments CRUD and Validation', function () {
             ->assertJsonPath('data.payments.0.payment_type', 'outbound');
     });
 
+    it('filters outbound payments by payment date range', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Date Filter Vendor',
+            'code' => 'SUP-DATE',
+            'status' => 'active',
+        ]);
+
+        $cashAccount = createAccount($token, $companyId, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+
+        foreach ([
+            ['date' => '2026-05-31', 'amount' => '100.0000'],
+            ['date' => '2026-06-15', 'amount' => '200.0000'],
+            ['date' => '2026-07-01', 'amount' => '300.0000'],
+        ] as $payment) {
+            $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+                ->postJson('/api/v1/finance/payments', [
+                    'partner_id' => $partner->id,
+                    'payment_type' => 'outbound',
+                    'payment_date' => $payment['date'],
+                    'payment_method' => 'cash',
+                    'amount' => $payment['amount'],
+                    'currency_id' => 1,
+                    'exchange_rate' => '1.00000000',
+                    'cash_account_id' => $cashAccount,
+                ])->assertCreated();
+        }
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/payments?payment_type=outbound&start_date=2026-06-01&end_date=2026-06-30')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.payments')
+            ->assertJsonPath('data.payments.0.payment_type', 'outbound')
+            ->assertJsonPath('data.payments.0.payment_date', '2026-06-15');
+    });
+
+    it('filters inbound receipts by payment date range', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'customer',
+            'name' => 'Date Filter Customer',
+            'code' => 'CUST-DATE',
+            'status' => 'active',
+        ]);
+
+        $cashAccount = createAccount($token, $companyId, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+
+        foreach ([
+            ['date' => '2026-05-31', 'amount' => '100.0000'],
+            ['date' => '2026-06-15', 'amount' => '200.0000'],
+            ['date' => '2026-07-01', 'amount' => '300.0000'],
+        ] as $receipt) {
+            $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+                ->postJson('/api/v1/finance/payments', [
+                    'partner_id' => $partner->id,
+                    'payment_type' => 'inbound',
+                    'payment_date' => $receipt['date'],
+                    'payment_method' => 'cash',
+                    'amount' => $receipt['amount'],
+                    'currency_id' => 1,
+                    'exchange_rate' => '1.00000000',
+                    'cash_account_id' => $cashAccount,
+                ])->assertCreated();
+        }
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/payments?payment_type=inbound&start_date=2026-06-01&end_date=2026-06-30')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.payments')
+            ->assertJsonPath('data.payments.0.payment_type', 'inbound')
+            ->assertJsonPath('data.payments.0.payment_date', '2026-06-15');
+    });
+
+    it('rejects payment list date ranges where the end date is before the start date', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/payments?start_date=2026-06-30&end_date=2026-06-01')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['end_date']);
+    });
+
     it('rejects allocations exceeding invoice/bill remaining balance', function (): void {
         [, $token, $companyId] = financeActor();
 

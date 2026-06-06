@@ -19,6 +19,8 @@ class ListInvoicesRequest extends FormRequest
         return [
             'partner_id' => ['sometimes', 'nullable', 'integer'],
             'status' => ['sometimes', 'nullable', 'string'],
+            'start_date' => ['sometimes', 'nullable', 'date'],
+            'end_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_date'],
             'per_page' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ];
     }

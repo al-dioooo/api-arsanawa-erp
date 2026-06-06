@@ -20,6 +20,8 @@ class ListPaymentsRequest extends FormRequest
             'partner_id' => ['sometimes', 'nullable', 'integer'],
             'payment_type' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'nullable', 'string'],
+            'start_date' => ['sometimes', 'nullable', 'date'],
+            'end_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_date'],
             'per_page' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ];
     }
