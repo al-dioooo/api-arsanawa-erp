@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\User;
 use App\Modules\Finance\Exports\ExpenseExport;
 use App\Modules\Finance\Exports\IncomeExport;
 use App\Modules\Finance\Models\Payment;
+use App\Modules\Organization\Models\Company;
+use App\Modules\Organization\Models\Membership;
 use App\Modules\Partners\Models\Partner;
 use App\Modules\Pos\Models\Sale;
 use Database\Seeders\CurrencySeeder;
@@ -95,6 +98,26 @@ describe('Income export', function () {
 
     it('requires authentication', function (): void {
         $this->getJson('/api/v1/finance/exports/income.xlsx')->assertUnauthorized();
+    });
+
+    it('forbids exporting financial data without the finance.view permission', function (): void {
+        $user = User::factory()->create();
+        $company = Company::create(['name' => 'Cashier Co', 'slug' => 'cashier-co-export', 'status' => 'active']);
+        Membership::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'role' => 'member',
+            'status' => 'active',
+        ]);
+
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => $user->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $company->id)
+            ->get('/api/v1/finance/exports/income.xlsx')
+            ->assertForbidden();
     });
 });
 

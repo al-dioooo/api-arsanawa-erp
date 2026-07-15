@@ -36,7 +36,15 @@ class IdentityController extends Controller
 
     public function show(ViewUserRequest $request, GetUserProfile $action, int $id): JsonResponse
     {
-        $user = User::find($id);
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        // Scope the lookup to users who share an active membership in the caller's
+        // active company so identity.view cannot disclose users of other tenants.
+        $user = User::query()
+            ->whereHas('memberships', fn ($query) => $query
+                ->where('company_id', $companyId)
+                ->where('status', 'active'))
+            ->find($id);
 
         if (! $user) {
             return $this->error(__('User not found.'), 404);

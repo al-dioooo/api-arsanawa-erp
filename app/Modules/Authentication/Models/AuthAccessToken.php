@@ -94,6 +94,11 @@ class AuthAccessToken extends Model
             return null;
         }
 
+        // Suspended or pending accounts must not be able to use existing tokens.
+        if (! $accessToken->user || ! $accessToken->user->isActive()) {
+            return null;
+        }
+
         return $accessToken;
     }
 

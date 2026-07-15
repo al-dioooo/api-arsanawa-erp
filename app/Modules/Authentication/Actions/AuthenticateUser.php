@@ -33,6 +33,12 @@ class AuthenticateUser
             ]);
         }
 
+        if (! $user->isActive()) {
+            throw ValidationException::withMessages([
+                'login' => [__('This account is not active. Please contact an administrator.')],
+            ]);
+        }
+
         $issued = AuthAccessToken::issueFor(
             user: $user,
             name: $credentials['device_name'] ?? 'api',

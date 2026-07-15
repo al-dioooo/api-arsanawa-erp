@@ -40,6 +40,28 @@ describe('Role management', function () {
             ->assertJsonFragment(['key' => 'organization.manage-roles']);
     });
 
+    it('forbids the permission catalog for a member without manage-roles', function (): void {
+        [, , $companyId] = roleOwner();
+
+        $member = User::factory()->create();
+        Membership::create([
+            'company_id' => $companyId,
+            'user_id' => $member->id,
+            'role' => 'member',
+            'status' => 'active',
+        ]);
+
+        $memberToken = $this->postJson('/api/v1/auth/login', [
+            'login' => $member->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withToken($memberToken)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/organization/permissions')
+            ->assertForbidden();
+    });
+
     it('creates and lists a custom role', function (): void {
         [, $token, $companyId] = roleOwner();
 

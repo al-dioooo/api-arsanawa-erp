@@ -1,10 +1,43 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Identity\Models\UserStatus;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+
+describe('account status enforcement', function () {
+    it('rejects login for a suspended account even with valid credentials', function () {
+        $user = User::factory()->create([
+            'email' => 'suspended@example.com',
+            'password' => 'correct-password',
+        ]);
+        UserStatus::create(['user_id' => $user->id, 'status' => 'suspended']);
+
+        $this->postJson('/api/v1/auth/login', [
+            'login' => 'suspended@example.com',
+            'password' => 'correct-password',
+        ])->assertUnprocessable()->assertJsonValidationErrors('login');
+    });
+
+    it('rejects an existing token once the account is suspended', function () {
+        $user = User::factory()->create(['password' => 'correct-password']);
+
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => $user->email,
+            'password' => 'correct-password',
+        ])->json('data.access_token');
+
+        // Token works while active.
+        $this->withToken($token)->getJson('/api/v1/auth/me')->assertSuccessful();
+
+        UserStatus::create(['user_id' => $user->id, 'status' => 'suspended']);
+
+        // The same token is now rejected.
+        $this->withToken($token)->getJson('/api/v1/auth/me')->assertUnauthorized();
+    });
+});
 
 describe('POST /api/v1/auth/login', function () {
     it('authenticates with an email and returns a bearer token', function () {

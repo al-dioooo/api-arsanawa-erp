@@ -5,7 +5,7 @@ namespace App\Modules\Finance\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Finance\Exports\ExpenseExport;
 use App\Modules\Finance\Exports\IncomeExport;
-use Illuminate\Http\Request;
+use App\Modules\Finance\Http\Requests\ExportFinanceRequest;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -14,7 +14,7 @@ class FinanceExportController extends Controller
     /**
      * Stream the income export (posted inbound payments + completed POS sales).
      */
-    public function income(Request $request): BinaryFileResponse
+    public function income(ExportFinanceRequest $request): BinaryFileResponse
     {
         [$companyId, $from, $to] = $this->context($request);
 
@@ -27,7 +27,7 @@ class FinanceExportController extends Controller
     /**
      * Stream the expense export (posted outbound payments).
      */
-    public function expense(Request $request): BinaryFileResponse
+    public function expense(ExportFinanceRequest $request): BinaryFileResponse
     {
         [$companyId, $from, $to] = $this->context($request);
 
@@ -40,12 +40,9 @@ class FinanceExportController extends Controller
     /**
      * @return array{0: int, 1: string|null, 2: string|null}
      */
-    private function context(Request $request): array
+    private function context(ExportFinanceRequest $request): array
     {
-        $validated = $request->validate([
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
-        ]);
+        $validated = $request->validated();
 
         return [
             (int) $request->attributes->get('active_company_id'),

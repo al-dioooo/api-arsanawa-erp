@@ -39,6 +39,7 @@ use App\Modules\Organization\Http\Requests\ManageRolesRequest;
 use App\Modules\Organization\Http\Requests\ShowOrganizationContextRequest;
 use App\Modules\Organization\Http\Requests\UpdateModuleEntitlementsRequest;
 use App\Modules\Organization\Http\Requests\UpdateRoleRequest;
+use App\Modules\Organization\Http\Requests\ViewPermissionCatalogRequest;
 use App\Modules\Organization\Http\Resources\BranchAssignmentResource;
 use App\Modules\Organization\Http\Resources\BranchResource;
 use App\Modules\Organization\Http\Resources\CompanyMembershipResource;
@@ -240,7 +241,7 @@ class OrganizationController extends Controller
         );
     }
 
-    public function permissions(): JsonResponse
+    public function permissions(ViewPermissionCatalogRequest $request): JsonResponse
     {
         return $this->success(
             ['permissions' => PermissionCatalog::grouped()],

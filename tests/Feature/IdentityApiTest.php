@@ -163,6 +163,12 @@ describe('GET /api/v1/identity/users/{id}', function () {
         setPermissionsTeamId(null);
 
         $target = User::factory()->create();
+        Membership::create([
+            'company_id' => $company->id,
+            'user_id' => $target->id,
+            'role' => 'member',
+            'status' => 'active',
+        ]);
 
         $token = $this->postJson('/api/v1/auth/login', [
             'login' => $admin->email,
@@ -170,6 +176,7 @@ describe('GET /api/v1/identity/users/{id}', function () {
         ])->json('data.access_token');
 
         $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $company->id)
             ->getJson("/api/v1/identity/users/{$target->id}")
             ->assertSuccessful()
             ->assertJsonStructure([
@@ -177,6 +184,43 @@ describe('GET /api/v1/identity/users/{id}', function () {
                 'data' => ['id', 'name', 'username', 'email', 'profile', 'status'],
             ])
             ->assertJsonPath('data.id', $target->id);
+    });
+
+    it('returns 404 for a user outside the requester active company (tenant isolation)', function () {
+        Permission::create(['name' => 'identity.view', 'guard_name' => 'api']);
+
+        $admin = User::factory()->create();
+        $companyA = Company::create(['name' => 'Company A', 'slug' => 'company-a-iso', 'status' => 'active']);
+        Membership::create([
+            'company_id' => $companyA->id,
+            'user_id' => $admin->id,
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+
+        setPermissionsTeamId($companyA->id);
+        $admin->givePermissionTo('identity.view');
+        setPermissionsTeamId(null);
+
+        // Target belongs only to a different company.
+        $companyB = Company::create(['name' => 'Company B', 'slug' => 'company-b-iso', 'status' => 'active']);
+        $target = User::factory()->create();
+        Membership::create([
+            'company_id' => $companyB->id,
+            'user_id' => $target->id,
+            'role' => 'member',
+            'status' => 'active',
+        ]);
+
+        $token = $this->postJson('/api/v1/auth/login', [
+            'login' => $admin->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyA->id)
+            ->getJson("/api/v1/identity/users/{$target->id}")
+            ->assertNotFound();
     });
 
     it('returns 403 when the requester lacks identity.view permission', function () {
