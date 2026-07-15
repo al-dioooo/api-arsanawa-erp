@@ -125,6 +125,44 @@ describe('Finance Document Approval Workflow', function () {
             ->assertSuccessful();
     });
 
+    it('serializes the approvable document (number, total, status) in the approval requests list', function (): void {
+        [$owner, $token, $companyId] = financeActor();
+
+        $partner = Partner::create([
+            'company_id' => $companyId,
+            'type' => 'vendor',
+            'name' => 'Supplier Inc',
+            'code' => 'SUP-APPR',
+            'status' => 'active',
+        ]);
+
+        $bill = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/finance/bills', [
+                'partner_id' => $partner->id,
+                'bill_date' => '2026-05-22',
+                'due_date' => '2026-06-22',
+                'lines' => [
+                    ['description' => 'Consulting', 'quantity' => '1.0000', 'unit_price' => '2000.0000'],
+                ],
+            ])->json('data.bill');
+
+        ApprovalRequest::create([
+            'company_id' => $companyId,
+            'approvable_type' => (new Bill)->getMorphClass(),
+            'approvable_id' => $bill['id'],
+            'current_level' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/approval-requests')
+            ->assertSuccessful()
+            ->assertJsonPath('data.approval_requests.0.approvable.id', $bill['id'])
+            ->assertJsonPath('data.approval_requests.0.approvable.bill_number', $bill['bill_number'])
+            ->assertJsonPath('data.approval_requests.0.approvable.status', $bill['status'])
+            ->assertJsonPath('data.approval_requests.0.approvable.total', fn ($total) => $total !== null);
+    });
+
     it('requires multiple sequential approvals and handles rejects', function (): void {
         [$owner, $token, $companyId] = financeActor();
 

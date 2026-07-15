@@ -26,6 +26,7 @@ class StockQueryRequest extends FormRequest
             'product_unit_id' => ['sometimes', 'integer', Rule::exists('product_units', 'id')->where('company_id', $companyId)],
             'product_variant_id' => ['sometimes', 'integer', Rule::exists('product_variants', 'id')->where('company_id', $companyId)],
             'branch_id' => ['sometimes', 'integer'],
+            'type' => ['sometimes', 'string', Rule::in(['receipt', 'issue', 'adjustment_up', 'adjustment_down', 'transfer_out', 'transfer_in'])],
             'expiring_before' => ['sometimes', 'date'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ];

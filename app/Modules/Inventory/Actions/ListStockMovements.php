@@ -28,6 +28,10 @@ class ListStockMovements
             $query->where('product_unit_id', (int) $params['product_unit_id']);
         }
 
+        if (isset($params['type'])) {
+            $query->where('type', $params['type']);
+        }
+
         return $query->orderByDesc('occurred_at')
             ->paginate($params['per_page'] ?? 15);
     }

@@ -204,6 +204,54 @@ describe('Inventory stock queries', function () {
             ->assertJsonStructure(['data' => ['movements', 'pagination']]);
     });
 
+    it('filters stock movements by type', function (): void {
+        [, $token, $companyId, $branchId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Flour',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'QRY-TYPE']],
+        ]);
+        $variantId = test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->json('data.product.variants.0.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/receipts', [
+                'product_variant_id' => $variantId,
+                'branch_id' => $branchId,
+                'quantity' => 50,
+                'unit_cost' => 2000,
+            ])->assertCreated();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->withHeader('X-Branch-Id', (string) $branchId)
+            ->postJson('/api/v1/inventory/stock/issues', [
+                'product_variant_id' => $variantId,
+                'branch_id' => $branchId,
+                'quantity' => 10,
+            ])->assertSuccessful();
+
+        // No filter: both the receipt and the issue movement are returned.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/movements?branch_id={$branchId}")
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data.movements');
+
+        // type=receipt narrows the ledger to receipt movements only.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/movements?branch_id={$branchId}&type=receipt")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.movements')
+            ->assertJsonPath('data.movements.0.type', 'receipt');
+
+        // Unknown movement types are rejected rather than silently ignored.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/movements?branch_id={$branchId}&type=bogus")
+            ->assertStatus(422);
+    });
+
     it('returns stock valuation', function (): void {
         [, $token, $companyId, $branchId] = inventoryActor();
         $uom = createUnit($token, $companyId, 'pcs');
