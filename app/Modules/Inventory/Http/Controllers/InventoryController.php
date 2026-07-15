@@ -22,12 +22,14 @@ use App\Modules\Inventory\Actions\DeleteReward;
 use App\Modules\Inventory\Actions\DeleteUnitOfMeasure;
 use App\Modules\Inventory\Actions\DeleteVariant;
 use App\Modules\Inventory\Actions\DeleteVariantGroup;
+use App\Modules\Inventory\Actions\GetGoodsReceipt;
 use App\Modules\Inventory\Actions\GetInventoryDashboardSummary;
 use App\Modules\Inventory\Actions\GetProduct;
 use App\Modules\Inventory\Actions\GetStockMovement;
 use App\Modules\Inventory\Actions\GetStockValuation;
 use App\Modules\Inventory\Actions\ListBrands;
 use App\Modules\Inventory\Actions\ListCategories;
+use App\Modules\Inventory\Actions\ListGoodsReceipts;
 use App\Modules\Inventory\Actions\ListProducts;
 use App\Modules\Inventory\Actions\ListProductUnits;
 use App\Modules\Inventory\Actions\ListStockLevels;
@@ -39,6 +41,7 @@ use App\Modules\Inventory\Actions\ListVariants;
 use App\Modules\Inventory\Actions\ManageProductTags;
 use App\Modules\Inventory\Actions\ManageVariants;
 use App\Modules\Inventory\Actions\MoveCategory;
+use App\Modules\Inventory\Actions\RecordGoodsReceipt;
 use App\Modules\Inventory\Actions\RecordStockAdjustment;
 use App\Modules\Inventory\Actions\RecordStockIssue;
 use App\Modules\Inventory\Actions\RecordStockReceipt;
@@ -77,6 +80,7 @@ use App\Modules\Inventory\Http\Requests\DeleteVariantRequest;
 use App\Modules\Inventory\Http\Requests\ListBrandsRequest;
 use App\Modules\Inventory\Http\Requests\ListCategoriesRequest;
 use App\Modules\Inventory\Http\Requests\ListDiscountsRequest;
+use App\Modules\Inventory\Http\Requests\ListGoodsReceiptsRequest;
 use App\Modules\Inventory\Http\Requests\ListProductsRequest;
 use App\Modules\Inventory\Http\Requests\ListProductUnitsRequest;
 use App\Modules\Inventory\Http\Requests\ListRewardsRequest;
@@ -92,6 +96,7 @@ use App\Modules\Inventory\Http\Requests\StockIssueRequest;
 use App\Modules\Inventory\Http\Requests\StockQueryRequest;
 use App\Modules\Inventory\Http\Requests\StockReceiptRequest;
 use App\Modules\Inventory\Http\Requests\StockTransferRequest;
+use App\Modules\Inventory\Http\Requests\StoreGoodsReceiptRequest;
 use App\Modules\Inventory\Http\Requests\StoreProductImageRequest;
 use App\Modules\Inventory\Http\Requests\SyncTagsRequest;
 use App\Modules\Inventory\Http\Requests\UpdateBrandRequest;
@@ -105,6 +110,7 @@ use App\Modules\Inventory\Http\Requests\UpdateVariantRequest;
 use App\Modules\Inventory\Http\Resources\BrandResource;
 use App\Modules\Inventory\Http\Resources\CategoryResource;
 use App\Modules\Inventory\Http\Resources\DiscountResource;
+use App\Modules\Inventory\Http\Resources\GoodsReceiptResource;
 use App\Modules\Inventory\Http\Resources\PriceListResource;
 use App\Modules\Inventory\Http\Resources\ProductImageResource;
 use App\Modules\Inventory\Http\Resources\ProductResource;
@@ -736,6 +742,49 @@ class InventoryController extends Controller
         return $this->success(
             $action->execute($companyId, $request->validated()),
             __('Stock valuation retrieved.'),
+        );
+    }
+
+    // --- Goods receipts (Penerimaan Bahan Baku / STB) ---------------------
+
+    public function goodsReceipts(ListGoodsReceiptsRequest $request, ListGoodsReceipts $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $paginator = $action->execute($companyId, $request->validated());
+
+        return $this->success(
+            [
+                'goods_receipts' => GoodsReceiptResource::collection($paginator->getCollection()),
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
+            __('Goods receipts retrieved.'),
+        );
+    }
+
+    public function storeGoodsReceipt(StoreGoodsReceiptRequest $request, RecordGoodsReceipt $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $receipt = $action->execute($companyId, $request->user(), $request->validated());
+
+        return $this->success(
+            ['goods_receipt' => new GoodsReceiptResource($receipt->loadCount('lines'))],
+            __('Goods receipt recorded.'),
+            201,
+        );
+    }
+
+    public function goodsReceipt(ListGoodsReceiptsRequest $request, GetGoodsReceipt $action, int $goodsReceipt): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        return $this->success(
+            ['goods_receipt' => new GoodsReceiptResource($action->execute($companyId, $goodsReceipt))],
+            __('Goods receipt retrieved.'),
         );
     }
 

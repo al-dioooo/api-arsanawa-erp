@@ -198,6 +198,10 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::get('stock/movements/{movement}', [InventoryController::class, 'stockMovement'])->name('stock.movements.show');
         Route::get('stock/valuation', [InventoryController::class, 'stockValuation'])->name('stock.valuation.index');
 
+        Route::get('goods-receipts', [InventoryController::class, 'goodsReceipts'])->name('goods-receipts.index');
+        Route::post('goods-receipts', [InventoryController::class, 'storeGoodsReceipt'])->name('goods-receipts.store');
+        Route::get('goods-receipts/{goodsReceipt}', [InventoryController::class, 'goodsReceipt'])->name('goods-receipts.show');
+
         Route::get('price-lists', [InventoryController::class, 'priceLists'])->name('price-lists.index');
         Route::post('price-lists', [InventoryController::class, 'storePriceList'])->name('price-lists.store');
         Route::put('price-lists/{priceList}/prices', [InventoryController::class, 'setPrice'])->name('price-lists.prices.set');
