@@ -7,6 +7,7 @@ use App\Modules\Inventory\Models\PriceList;
 use App\Modules\Inventory\Models\ProductUnit;
 use App\Modules\Inventory\Models\ProductVariant;
 use App\Modules\Organization\Models\Company;
+use App\Modules\Organization\Models\Membership;
 use App\Modules\Partners\Models\Partner;
 use App\Modules\Platform\Services\SettingsManager;
 use App\Modules\Pos\Models\Sale;
@@ -98,6 +99,31 @@ describe('spreadsheet import templates', function (): void {
             ->get('/api/v1/inventory/products/imports/template.xlsx')
             ->assertSuccessful()
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+});
+
+describe('import authorization', function (): void {
+    it('forbids inventory imports for a member without inventory.manage-products', function (): void {
+        [, , $companyId] = inventoryActor();
+
+        $member = User::factory()->create();
+        Membership::create([
+            'company_id' => $companyId,
+            'user_id' => $member->id,
+            'role' => 'member',
+            'status' => 'active',
+        ]);
+
+        $memberToken = test()->postJson('/api/v1/auth/login', [
+            'login' => $member->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        test()->withToken($memberToken)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/inventory/products/imports/inspect', [
+                'source_url' => 'https://docs.google.com/spreadsheets/d/abc/export?format=csv',
+            ])
+            ->assertForbidden();
     });
 });
 

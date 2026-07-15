@@ -7,13 +7,13 @@ use App\Modules\Platform\Actions\ListCurrencies;
 use App\Modules\Platform\Actions\ListSettings;
 use App\Modules\Platform\Actions\UpsertSettings;
 use App\Modules\Platform\Http\Requests\ListSettingsRequest;
+use App\Modules\Platform\Http\Requests\SendWhatsAppTestRequest;
 use App\Modules\Platform\Http\Requests\UpsertSettingsRequest;
 use App\Modules\Platform\Http\Resources\CurrencyResource;
 use App\Modules\Platform\Http\Resources\SettingResource;
 use App\Modules\Platform\Services\WhatsApp\WhatsAppService;
 use App\Modules\Platform\Support\PhoneNormalizer;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class PlatformController extends Controller
 {
@@ -49,12 +49,9 @@ class PlatformController extends Controller
         );
     }
 
-    public function sendWhatsAppTest(Request $request, WhatsAppService $whatsApp): JsonResponse
+    public function sendWhatsAppTest(SendWhatsAppTestRequest $request, WhatsAppService $whatsApp): JsonResponse
     {
-        $validated = $request->validate([
-            'to' => ['required', 'string', 'max:32'],
-            'message' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $companyId = (int) $request->attributes->get('active_company_id');
         $to = PhoneNormalizer::normalize($validated['to']);
