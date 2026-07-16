@@ -105,6 +105,58 @@ describe('Inventory product variants', function () {
             ->where('branch_id', $branchId)
             ->where('product_variant_id', $variantId)
             ->count())->toBe(1);
+
+        // The product detail exposes the stored state so the UI can render
+        // toggles without guessing.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.product.variants.0.branch_availability.0.branch_id', $branchId)
+            ->assertJsonPath('data.product.variants.0.branch_availability.0.is_available', false);
+
+        // An availability-only update must not clobber the stored exclusivity.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/products/{$productId}/variants/{$variantId}/availability", [
+                'branch_id' => $branchId,
+                'is_available' => true,
+                'is_exclusive' => true,
+            ])->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/products/{$productId}/variants/{$variantId}/availability", [
+                'branch_id' => $branchId,
+                'is_available' => false,
+            ])->assertSuccessful();
+
+        $this->assertDatabaseHas('product_branch_availability', [
+            'branch_id' => $branchId,
+            'product_variant_id' => $variantId,
+            'is_available' => false,
+            'is_exclusive' => true,
+        ]);
+    });
+
+    it('clears all product tags with an empty array', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Tagged Tea',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'TAG-CLR-1']],
+        ]);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/products/{$productId}/tags", ['tags' => ['seasonal', 'promo']])
+            ->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/products/{$productId}/tags", ['tags' => []])
+            ->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data.product.tags');
     });
 
     it('rejects branch availability for a branch in another company', function (): void {

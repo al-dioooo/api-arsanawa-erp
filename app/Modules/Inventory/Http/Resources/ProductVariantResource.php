@@ -20,6 +20,12 @@ class ProductVariantResource extends JsonResource
             'purchase_uom_id' => $this->purchase_uom_id,
             'purchase_conversion_factor' => $this->purchase_conversion_factor,
             'is_active' => $this->is_active,
+            // A variant with no row for a branch is available there.
+            'branch_availability' => $this->whenLoaded('availabilities', fn () => $this->availabilities->map(fn ($availability): array => [
+                'branch_id' => $availability->branch_id,
+                'is_available' => $availability->is_available,
+                'is_exclusive' => $availability->is_exclusive,
+            ])->values()->all()),
         ];
     }
 }

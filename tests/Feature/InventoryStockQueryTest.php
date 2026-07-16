@@ -165,6 +165,20 @@ describe('Inventory stock queries', function () {
             ->getJson("/api/v1/inventory/stock/lots?branch_id={$branchId}&expiring_before=2026-07-01")
             ->assertSuccessful()
             ->assertJsonCount(1, 'data.lots');
+
+        // The list is paginated and honours per_page with meta for the client.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/lots?branch_id={$branchId}&per_page=1")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.lots')
+            ->assertJsonPath('data.pagination.total', 2)
+            ->assertJsonPath('data.pagination.last_page', 2);
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/stock/lots?branch_id={$branchId}&per_page=1&page=2")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.lots')
+            ->assertJsonPath('data.pagination.current_page', 2);
     });
 
     it('lists stock movements (paginated ledger)', function (): void {

@@ -23,31 +23,46 @@ class GetInventoryDashboardSummary
      */
     public function execute(int $companyId): array
     {
-        $stockValue = StockLot::query()
+        // One conditionally-aggregated query per table instead of a count per
+        // counter.
+        $products = Product::query()
+            ->forCompany($companyId)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) as active")
+            ->selectRaw("COALESCE(SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END), 0) as inactive")
+            ->first();
+
+        $productUnits = ProductUnit::query()
+            ->forCompany($companyId)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN is_active THEN 1 ELSE 0 END), 0) as active')
+            ->first();
+
+        $lots = StockLot::query()
             ->forCompany($companyId)
             ->active()
-            ->selectRaw('SUM(remaining_quantity * unit_cost) as total')
-            ->value('total') ?? 0;
+            ->selectRaw('COUNT(*) as active_count')
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN expiry_date BETWEEN ? AND ? THEN 1 ELSE 0 END), 0) as expiring_soon',
+                [now()->toDateString(), now()->addDays(30)->toDateString()],
+            )
+            ->selectRaw('COALESCE(SUM(remaining_quantity * unit_cost), 0) as stock_value')
+            ->first();
 
         return [
             'counters' => [
                 'products' => [
-                    'total' => Product::query()->forCompany($companyId)->count(),
-                    'active' => Product::query()->forCompany($companyId)->where('status', 'active')->count(),
-                    'inactive' => Product::query()->forCompany($companyId)->where('status', 'inactive')->count(),
+                    'total' => (int) $products->total,
+                    'active' => (int) $products->active,
+                    'inactive' => (int) $products->inactive,
                 ],
                 'product_units' => [
-                    'total' => ProductUnit::query()->forCompany($companyId)->count(),
-                    'active' => ProductUnit::query()->forCompany($companyId)->where('is_active', true)->count(),
+                    'total' => (int) $productUnits->total,
+                    'active' => (int) $productUnits->active,
                 ],
                 'stock_lots' => [
-                    'active' => StockLot::query()->forCompany($companyId)->active()->count(),
-                    'expiring_soon' => StockLot::query()
-                        ->forCompany($companyId)
-                        ->active()
-                        ->whereNotNull('expiry_date')
-                        ->whereBetween('expiry_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
-                        ->count(),
+                    'active' => (int) $lots->active_count,
+                    'expiring_soon' => (int) $lots->expiring_soon,
                 ],
                 'stock_movements' => [
                     'total' => StockMovement::query()->forCompany($companyId)->count(),
@@ -56,7 +71,7 @@ class GetInventoryDashboardSummary
                         ->where('status', '!=', 'completed')
                         ->count(),
                 ],
-                'stock_value' => number_format((float) $stockValue, 4, '.', ''),
+                'stock_value' => number_format((float) $lots->stock_value, 4, '.', ''),
             ],
         ];
     }

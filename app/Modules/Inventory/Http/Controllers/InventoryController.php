@@ -81,6 +81,7 @@ use App\Modules\Inventory\Http\Requests\ListBrandsRequest;
 use App\Modules\Inventory\Http\Requests\ListCategoriesRequest;
 use App\Modules\Inventory\Http\Requests\ListDiscountsRequest;
 use App\Modules\Inventory\Http\Requests\ListGoodsReceiptsRequest;
+use App\Modules\Inventory\Http\Requests\ListPricesRequest;
 use App\Modules\Inventory\Http\Requests\ListProductsRequest;
 use App\Modules\Inventory\Http\Requests\ListProductUnitsRequest;
 use App\Modules\Inventory\Http\Requests\ListRewardsRequest;
@@ -112,6 +113,7 @@ use App\Modules\Inventory\Http\Resources\CategoryResource;
 use App\Modules\Inventory\Http\Resources\DiscountResource;
 use App\Modules\Inventory\Http\Resources\GoodsReceiptResource;
 use App\Modules\Inventory\Http\Resources\PriceListResource;
+use App\Modules\Inventory\Http\Resources\PriceResource;
 use App\Modules\Inventory\Http\Resources\ProductImageResource;
 use App\Modules\Inventory\Http\Resources\ProductResource;
 use App\Modules\Inventory\Http\Resources\ProductUnitResource;
@@ -170,14 +172,6 @@ class InventoryController extends Controller
             ['category' => new CategoryResource($category)],
             __('Category created.'),
             201,
-        );
-    }
-
-    public function showCategory(ListCategoriesRequest $request, int $category): JsonResponse
-    {
-        return $this->success(
-            ['category' => new CategoryResource($this->resolveCategory($request, $category))],
-            __('Category retrieved.'),
         );
     }
 
@@ -243,14 +237,6 @@ class InventoryController extends Controller
         );
     }
 
-    public function showBrand(ListBrandsRequest $request, int $brand): JsonResponse
-    {
-        return $this->success(
-            ['brand' => new BrandResource($this->resolveBrand($request, $brand))],
-            __('Brand retrieved.'),
-        );
-    }
-
     public function updateBrand(UpdateBrandRequest $request, UpdateBrand $action, int $brand): JsonResponse
     {
         $resolved = $this->resolveBrand($request, $brand);
@@ -290,14 +276,6 @@ class InventoryController extends Controller
             ['unit' => new UnitOfMeasureResource($unit)],
             __('Unit of measure created.'),
             201,
-        );
-    }
-
-    public function showUnit(ListUnitsOfMeasureRequest $request, int $unit): JsonResponse
-    {
-        return $this->success(
-            ['unit' => new UnitOfMeasureResource($this->resolveUnit($request, $unit))],
-            __('Unit of measure retrieved.'),
         );
     }
 
@@ -699,9 +677,18 @@ class InventoryController extends Controller
     public function stockLots(StockQueryRequest $request, ListStockLots $action): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');
+        $paginator = $action->execute($companyId, $request->validated());
 
         return $this->success(
-            ['lots' => StockLotResource::collection($action->execute($companyId, $request->validated()))],
+            [
+                'lots' => StockLotResource::collection($paginator->items()),
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
             __('Stock lots retrieved.'),
         );
     }
@@ -813,6 +800,23 @@ class InventoryController extends Controller
         );
     }
 
+    public function priceListPrices(ListPricesRequest $request, int $priceList): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $resolved = PriceList::where('company_id', $companyId)->findOrFail($priceList);
+
+        $rows = $resolved->prices()
+            ->when($request->validated('product_variant_id'), fn ($query, $variantId) => $query->where('product_variant_id', $variantId))
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->get();
+
+        return $this->success(
+            ['prices' => PriceResource::collection($rows)],
+            __('Prices retrieved.'),
+        );
+    }
+
     public function setPrice(SetPriceRequest $request, SetPrice $action, int $priceList): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');
@@ -833,6 +837,16 @@ class InventoryController extends Controller
         return $this->success(
             $action->execute($resolvedVariant->id, $request->query()),
             __('Price resolved.'),
+        );
+    }
+
+    public function resolvePrices(StockQueryRequest $request, ResolvePrice $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        return $this->success(
+            $action->executeForCompany($companyId, $request->query()),
+            __('Prices resolved.'),
         );
     }
 

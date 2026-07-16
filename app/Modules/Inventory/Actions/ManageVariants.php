@@ -6,6 +6,11 @@ use App\Models\User;
 use App\Modules\Inventory\Models\Product;
 use App\Modules\Inventory\Models\ProductVariant;
 
+/**
+ * Deliberate exception to the one-execute()-per-Action convention: product variants
+ * are a child collection whose add/update/delete share invariants and always
+ * ship together, so the lifecycle lives in one class instead of three files.
+ */
 class ManageVariants
 {
     /**

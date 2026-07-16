@@ -4,8 +4,9 @@ namespace App\Modules\Inventory\Http\Requests;
 
 use App\Modules\Inventory\Http\Requests\Concerns\AuthorizesInventoryRequests;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class ListProductsRequest extends FormRequest
+class ListPricesRequest extends FormRequest
 {
     use AuthorizesInventoryRequests;
 
@@ -19,13 +20,10 @@ class ListProductsRequest extends FormRequest
      */
     public function rules(): array
     {
+        $companyId = $this->activeCompanyId();
+
         return [
-            'category_id' => ['sometimes', 'integer'],
-            'brand_id' => ['sometimes', 'integer'],
-            'status' => ['sometimes', 'string'],
-            'search' => ['sometimes', 'string', 'max:255'],
-            'include' => ['sometimes', 'string', 'in:product_units'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'product_variant_id' => ['sometimes', 'integer', Rule::exists('product_variants', 'id')->where('company_id', $companyId)],
         ];
     }
 }

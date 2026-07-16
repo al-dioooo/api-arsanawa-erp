@@ -2188,37 +2188,6 @@ paths:
               type: object
               additionalProperties: true
   '/api/v1/inventory/brands/{brand}':
-    get:
-      operationId: inventory_brands_show
-      tags:
-        - Inventory
-      summary: api.v1.inventory.brands.show
-      parameters:
-        -
-          $ref: '#/components/parameters/AcceptHeader'
-        -
-          $ref: '#/components/parameters/CompanyIdHeader'
-        -
-          name: brand
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: 'Route model identifier.'
-      responses:
-        200:
-          $ref: '#/components/responses/Success'
-        401:
-          $ref: '#/components/responses/Unauthenticated'
-        403:
-          $ref: '#/components/responses/Forbidden'
-        404:
-          $ref: '#/components/responses/NotFound'
-        422:
-          $ref: '#/components/responses/ValidationError'
-      security:
-        -
-          bearerAuth: {  }
     patch:
       operationId: inventory_brands_update
       tags:
@@ -2370,37 +2339,6 @@ paths:
               type: object
               additionalProperties: true
   '/api/v1/inventory/categories/{category}':
-    get:
-      operationId: inventory_categories_show
-      tags:
-        - Inventory
-      summary: api.v1.inventory.categories.show
-      parameters:
-        -
-          $ref: '#/components/parameters/AcceptHeader'
-        -
-          $ref: '#/components/parameters/CompanyIdHeader'
-        -
-          name: category
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: 'Route model identifier.'
-      responses:
-        200:
-          $ref: '#/components/responses/Success'
-        401:
-          $ref: '#/components/responses/Unauthenticated'
-        403:
-          $ref: '#/components/responses/Forbidden'
-        404:
-          $ref: '#/components/responses/NotFound'
-        422:
-          $ref: '#/components/responses/ValidationError'
-      security:
-        -
-          bearerAuth: {  }
     patch:
       operationId: inventory_categories_update
       tags:
@@ -2772,6 +2710,44 @@ paths:
               type: object
               additionalProperties: true
   '/api/v1/inventory/price-lists/{priceList}/prices':
+    get:
+      operationId: inventory_price_lists_prices_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.price-lists.prices.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: priceList
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+        -
+          name: product_variant_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: 'Filter price rows to one product variant.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
     put:
       operationId: inventory_price_lists_prices_set
       tags:
@@ -2810,6 +2786,39 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/inventory/prices/resolve:
+    get:
+      operationId: inventory_prices_resolve
+      tags:
+        - Inventory
+      summary: api.v1.inventory.prices.resolve
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: 'on'
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: 'Resolve prices effective on this date (defaults to today).'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/inventory/product-units:
     get:
       operationId: inventory_product_units_index
@@ -3890,37 +3899,6 @@ paths:
               type: object
               additionalProperties: true
   '/api/v1/inventory/units-of-measure/{unit}':
-    get:
-      operationId: inventory_units_show
-      tags:
-        - Inventory
-      summary: api.v1.inventory.units.show
-      parameters:
-        -
-          $ref: '#/components/parameters/AcceptHeader'
-        -
-          $ref: '#/components/parameters/CompanyIdHeader'
-        -
-          name: unit
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: 'Route model identifier.'
-      responses:
-        200:
-          $ref: '#/components/responses/Success'
-        401:
-          $ref: '#/components/responses/Unauthenticated'
-        403:
-          $ref: '#/components/responses/Forbidden'
-        404:
-          $ref: '#/components/responses/NotFound'
-        422:
-          $ref: '#/components/responses/ValidationError'
-      security:
-        -
-          bearerAuth: {  }
     patch:
       operationId: inventory_units_update
       tags:
@@ -4683,43 +4661,6 @@ paths:
                   type: string
                   format: date-time
                   nullable: true
-  '/api/v1/organization/companies/{company}/api-keys/{apiKey}':
-    get:
-      operationId: organization_companies_api_keys_show
-      tags:
-        - Organization
-      summary: api.v1.organization.companies.api-keys.show
-      parameters:
-        -
-          $ref: '#/components/parameters/AcceptHeader'
-        -
-          $ref: '#/components/parameters/CompanyIdHeader'
-        -
-          name: company
-          in: path
-          required: true
-          schema:
-            type: integer
-        -
-          name: apiKey
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        200:
-          $ref: '#/components/responses/Success'
-        401:
-          $ref: '#/components/responses/Unauthenticated'
-        403:
-          $ref: '#/components/responses/Forbidden'
-        404:
-          $ref: '#/components/responses/NotFound'
-        422:
-          $ref: '#/components/responses/ValidationError'
-      security:
-        -
-          bearerAuth: {  }
   '/api/v1/organization/companies/{company}/api-keys/{apiKey}/rotate':
     post:
       operationId: organization_companies_api_keys_rotate

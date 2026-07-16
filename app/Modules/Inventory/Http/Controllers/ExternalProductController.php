@@ -3,9 +3,10 @@
 namespace App\Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Inventory\Http\Resources\External\ExternalPriceResource;
+use App\Modules\Inventory\Http\Resources\External\ExternalProductResource;
 use App\Modules\Inventory\Models\Price;
 use App\Modules\Inventory\Models\Product;
-use App\Modules\Inventory\Models\ProductImage;
 use App\Modules\Inventory\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,15 +28,81 @@ class ExternalProductController extends Controller
                 'variants' => fn ($query) => $query->where('is_active', true)->orderBy('sku'),
             ])
             ->orderBy('name')
-            ->get()
-            ->map(fn (Product $product): array => $this->transformProduct($product, $companyId, $branchId, $on))
+            ->get();
+
+        // Batch-resolve prices and availability for every variant up front to
+        // avoid a query per variant on this polled catalog endpoint.
+        $variantIds = $products->flatMap(fn (Product $product): array => $product->variants->pluck('id')->all())->all();
+        $priceMap = $this->priceMap($companyId, $variantIds, $on);
+        $availabilityMap = $this->availabilityMap($companyId, $variantIds, $branchId);
+
+        $transformed = $products
+            ->map(fn (Product $product): array => (new ExternalProductResource($product, $priceMap, $availabilityMap))->resolve($request))
             ->filter(fn (array $product): bool => $product['variants'] !== [])
             ->values();
 
         return $this->success(
-            ['products' => $products],
+            ['products' => $transformed],
             __('Products retrieved.'),
         );
+    }
+
+    /**
+     * Latest effective price per variant, eager-loaded, resolved in one query.
+     *
+     * @param  array<int, int>  $variantIds
+     * @return array<int, Price>
+     */
+    private function priceMap(int $companyId, array $variantIds, string $on): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+
+        $prices = Price::query()
+            ->with(['priceList', 'productUnit.images'])
+            ->whereIn('product_variant_id', $variantIds)
+            ->where('effective_from', '<=', $on)
+            ->where(function ($query) use ($on): void {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $on);
+            })
+            ->whereHas('priceList', fn ($query) => $query
+                ->where('company_id', $companyId)
+                ->where('is_active', true))
+            ->orderByDesc('effective_from')
+            ->latest('id')
+            ->get();
+
+        $map = [];
+        foreach ($prices as $price) {
+            // Rows are ordered newest-first, so keep the first seen per variant.
+            $map[$price->product_variant_id] ??= $price;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Availability flag per variant for the branch, resolved in one query.
+     * A missing row means available.
+     *
+     * @param  array<int, int>  $variantIds
+     * @return array<int, bool>
+     */
+    private function availabilityMap(int $companyId, array $variantIds, ?int $branchId): array
+    {
+        if ($branchId === null || $variantIds === []) {
+            return [];
+        }
+
+        return DB::table('product_branch_availability')
+            ->where('company_id', $companyId)
+            ->where('branch_id', $branchId)
+            ->whereIn('product_variant_id', $variantIds)
+            ->pluck('is_available', 'product_variant_id')
+            ->map(fn ($isAvailable): bool => (bool) $isAvailable)
+            ->all();
     }
 
     public function price(Request $request, int $variant): JsonResponse
@@ -51,70 +118,18 @@ class ExternalProductController extends Controller
         $price = $this->resolvePrice($companyId, $resolvedVariant->id, $on);
 
         return $this->success(
-            [
-                'product_variant_id' => $resolvedVariant->id,
-                'price' => $price?->price,
-                'maximum_retail_price' => $price?->maximum_retail_price,
-                'currency_id' => $price?->priceList?->currency_id,
-            ],
+            (new ExternalPriceResource($resolvedVariant, $price))->resolve($request),
             __('Price resolved.'),
         );
     }
 
-    private function transformProduct(Product $product, int $companyId, ?int $branchId, string $on): array
-    {
-        $variants = $product->variants
-            ->filter(fn (ProductVariant $variant): bool => $this->variantIsAvailable($companyId, $variant->id, $branchId))
-            ->map(function (ProductVariant $variant) use ($companyId, $on): array {
-                $price = $this->resolvePrice($companyId, $variant->id, $on);
-
-                return [
-                    'id' => $variant->id,
-                    'product_id' => $variant->product_id,
-                    'sku' => $variant->sku,
-                    'barcode' => $variant->barcode,
-                    'name' => $variant->name,
-                    'attributes' => $variant->attributes,
-                    'price' => $price?->price,
-                    'maximum_retail_price' => $price?->maximum_retail_price,
-                    'currency_id' => $price?->priceList?->currency_id,
-                    'product_unit' => $price?->productUnit ? [
-                        'id' => $price->productUnit->id,
-                        'sku' => $price->productUnit->sku,
-                        'barcode' => $price->productUnit->barcode,
-                        'name' => $price->productUnit->name,
-                        'images' => $this->imageMetadata($price->productUnit->images),
-                    ] : null,
-                ];
-            })
-            ->values()
-            ->all();
-
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'attributes' => $product->attributes,
-            'images' => $this->imageMetadata($product->images),
-            'variants' => $variants,
-        ];
-    }
-
-    private function variantIsAvailable(int $companyId, int $variantId, ?int $branchId): bool
-    {
-        if ($branchId === null) {
-            return true;
-        }
-
-        $availability = DB::table('product_branch_availability')
-            ->where('company_id', $companyId)
-            ->where('branch_id', $branchId)
-            ->where('product_variant_id', $variantId)
-            ->first();
-
-        return $availability === null || (bool) $availability->is_available;
-    }
-
+    /**
+     * Latest effective price for one variant on the given date.
+     *
+     * Deliberately not delegated to the shared ResolvePrice action: this
+     * external endpoint additionally scopes the price list to the api-key
+     * company and to active price lists, which the shared action does not.
+     */
     private function resolvePrice(int $companyId, int $variantId, string $on): ?Price
     {
         return Price::query()
@@ -168,24 +183,5 @@ class ExternalProductController extends Controller
         }
 
         return $on;
-    }
-
-    private function imageMetadata($images): array
-    {
-        return $images
-            ->map(fn (ProductImage $image): array => [
-                'id' => $image->id,
-                'url' => $image->url,
-                'original_url' => $image->original_url,
-                'alt_text' => $image->alt_text,
-                'mime_type' => $image->mime_type,
-                'size_bytes' => $image->size_bytes,
-                'width' => $image->width,
-                'height' => $image->height,
-                'is_primary' => $image->is_primary,
-                'sort_order' => $image->sort_order,
-            ])
-            ->values()
-            ->all();
     }
 }

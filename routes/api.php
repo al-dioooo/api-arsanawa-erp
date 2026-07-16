@@ -69,7 +69,6 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::put('companies/{company}/entitlements', [OrganizationController::class, 'updateEntitlements'])->name('companies.entitlements.update');
         Route::get('companies/{company}/api-keys', [OrganizationController::class, 'apiKeys'])->name('companies.api-keys.index');
         Route::post('companies/{company}/api-keys', [OrganizationController::class, 'storeApiKey'])->name('companies.api-keys.store');
-        Route::get('companies/{company}/api-keys/{apiKey}', [OrganizationController::class, 'showApiKey'])->name('companies.api-keys.show');
         Route::post('companies/{company}/api-keys/{apiKey}/rotate', [OrganizationController::class, 'rotateApiKey'])->name('companies.api-keys.rotate');
         Route::post('companies/{company}/api-keys/{apiKey}/revoke', [OrganizationController::class, 'revokeApiKey'])->name('companies.api-keys.revoke');
 
@@ -137,20 +136,17 @@ Route::middleware(['auth:api', 'organization.company-context'])
 
         Route::get('categories', [InventoryController::class, 'categories'])->name('categories.index');
         Route::post('categories', [InventoryController::class, 'storeCategory'])->name('categories.store');
-        Route::get('categories/{category}', [InventoryController::class, 'showCategory'])->name('categories.show');
         Route::patch('categories/{category}', [InventoryController::class, 'updateCategory'])->name('categories.update');
         Route::post('categories/{category}/move', [InventoryController::class, 'moveCategory'])->name('categories.move');
         Route::delete('categories/{category}', [InventoryController::class, 'destroyCategory'])->name('categories.destroy');
 
         Route::get('brands', [InventoryController::class, 'brands'])->name('brands.index');
         Route::post('brands', [InventoryController::class, 'storeBrand'])->name('brands.store');
-        Route::get('brands/{brand}', [InventoryController::class, 'showBrand'])->name('brands.show');
         Route::patch('brands/{brand}', [InventoryController::class, 'updateBrand'])->name('brands.update');
         Route::delete('brands/{brand}', [InventoryController::class, 'destroyBrand'])->name('brands.destroy');
 
         Route::get('units-of-measure', [InventoryController::class, 'units'])->name('units.index');
         Route::post('units-of-measure', [InventoryController::class, 'storeUnit'])->name('units.store');
-        Route::get('units-of-measure/{unit}', [InventoryController::class, 'showUnit'])->name('units.show');
         Route::patch('units-of-measure/{unit}', [InventoryController::class, 'updateUnit'])->name('units.update');
         Route::delete('units-of-measure/{unit}', [InventoryController::class, 'destroyUnit'])->name('units.destroy');
 
@@ -211,8 +207,10 @@ Route::middleware(['auth:api', 'organization.company-context'])
 
         Route::get('price-lists', [InventoryController::class, 'priceLists'])->name('price-lists.index');
         Route::post('price-lists', [InventoryController::class, 'storePriceList'])->name('price-lists.store');
+        Route::get('price-lists/{priceList}/prices', [InventoryController::class, 'priceListPrices'])->name('price-lists.prices.index');
         Route::put('price-lists/{priceList}/prices', [InventoryController::class, 'setPrice'])->name('price-lists.prices.set');
         Route::get('products/{product}/variants/{variant}/price', [InventoryController::class, 'resolvePrice'])->name('products.variants.price.resolve');
+        Route::get('prices/resolve', [InventoryController::class, 'resolvePrices'])->name('prices.resolve');
 
         Route::get('discounts', [InventoryController::class, 'discounts'])->name('discounts.index');
         Route::get('discounts/{discount}', [InventoryController::class, 'showDiscount'])->name('discounts.show');

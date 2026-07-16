@@ -250,6 +250,13 @@ describe('POST /api/v1/organization/companies/{company}/branches', function () {
             'name' => 'South Kitchen',
             'code' => 'SOUTH',
         ]);
+
+        // The branch list read-back returns the created branch.
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/organization/companies/{$companyId}/branches")
+            ->assertSuccessful()
+            ->assertJsonFragment(['name' => 'South Kitchen']);
     });
 
     it('returns 403 when an active member lacks branch management permission', function () {

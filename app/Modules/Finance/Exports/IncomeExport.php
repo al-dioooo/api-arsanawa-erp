@@ -4,6 +4,7 @@ namespace App\Modules\Finance\Exports;
 
 use App\Modules\Finance\Models\Payment;
 use App\Modules\Pos\Models\Sale;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -25,40 +26,57 @@ class IncomeExport extends SpreadsheetExport
 
     public function collection(): Collection
     {
+        // Stream lean rows (selected columns + joined partner name) so only
+        // the final 6-field arrays are ever held, not hydrated model graphs.
         $payments = Payment::query()
-            ->forCompany($this->companyId)
-            ->where('payment_type', 'inbound')
-            ->where('status', 'posted')
-            ->when($this->from, fn ($q) => $q->whereDate('payment_date', '>=', $this->from))
-            ->when($this->to, fn ($q) => $q->whereDate('payment_date', '<=', $this->to))
-            ->with('partner')
-            ->get()
+            ->where('payments.company_id', $this->companyId)
+            ->leftJoin('partners', 'partners.id', '=', 'payments.partner_id')
+            ->where('payments.payment_type', 'inbound')
+            ->where('payments.status', 'posted')
+            ->when($this->from, fn ($q) => $q->where('payments.payment_date', '>=', $this->from))
+            ->when($this->to, fn ($q) => $q->where('payments.payment_date', '<=', $this->to))
+            ->select([
+                'payments.payment_date',
+                'payments.payment_number',
+                'payments.payment_method',
+                'payments.amount',
+                'partners.name as partner_name',
+            ])
+            ->cursor()
             ->map(fn (Payment $p): array => [
                 'date' => optional($p->payment_date)->format('Y-m-d') ?? '',
                 'source' => 'Payment',
                 'reference' => (string) $p->payment_number,
-                'party' => (string) ($p->partner?->name ?? ''),
+                'party' => (string) ($p->partner_name ?? ''),
                 'method' => (string) ($p->payment_method ?? ''),
                 'amount' => (float) $p->amount,
             ]);
 
         $sales = Sale::query()
-            ->forCompany($this->companyId)
-            ->where('status', 'completed')
-            ->when($this->from, fn ($q) => $q->whereDate('completed_at', '>=', $this->from))
-            ->when($this->to, fn ($q) => $q->whereDate('completed_at', '<=', $this->to))
-            ->with('partner')
-            ->get()
+            ->where('sales.company_id', $this->companyId)
+            ->leftJoin('partners', 'partners.id', '=', 'sales.partner_id')
+            ->where('sales.status', 'completed')
+            ->when($this->from, fn ($q) => $q->where('sales.completed_at', '>=', $this->from))
+            ->when($this->to, fn ($q) => $q->where('sales.completed_at', '<', Carbon::parse($this->to)->addDay()->toDateString()))
+            ->select([
+                'sales.completed_at',
+                'sales.order_date',
+                'sales.sale_number',
+                'sales.customer_name',
+                'sales.total',
+                'partners.name as partner_name',
+            ])
+            ->cursor()
             ->map(fn (Sale $s): array => [
                 'date' => optional($s->completed_at ?? $s->order_date)->format('Y-m-d') ?? '',
                 'source' => 'POS Sale',
                 'reference' => (string) $s->sale_number,
-                'party' => (string) ($s->customer_name ?: ($s->partner?->name ?? '')),
+                'party' => (string) ($s->customer_name ?: ($s->partner_name ?? '')),
                 'method' => 'POS',
                 'amount' => (float) $s->total,
             ]);
 
-        return $payments->concat($sales)->sortBy('date')->values();
+        return $payments->collect()->concat($sales->collect())->sortBy('date')->values();
     }
 
     /**
