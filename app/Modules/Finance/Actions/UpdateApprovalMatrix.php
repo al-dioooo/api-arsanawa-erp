@@ -4,11 +4,13 @@ namespace App\Modules\Finance\Actions;
 
 use App\Models\User;
 use App\Modules\Finance\Models\ApprovalMatrix;
-use App\Modules\Organization\Models\Membership;
+use App\Modules\Organization\Actions\CheckActiveMembership;
 use Illuminate\Validation\ValidationException;
 
 class UpdateApprovalMatrix
 {
+    public function __construct(private readonly CheckActiveMembership $activeMembership) {}
+
     /**
      * Execute the action.
      *
@@ -19,11 +21,7 @@ class UpdateApprovalMatrix
     public function execute(ApprovalMatrix $matrix, User $user, array $data): ApprovalMatrix
     {
         if (isset($data['approver_user_id']) && $data['approver_user_id'] !== $matrix->approver_user_id) {
-            $isMember = Membership::query()
-                ->where('company_id', $matrix->company_id)
-                ->where('user_id', $data['approver_user_id'])
-                ->where('status', 'active')
-                ->exists();
+            $isMember = $this->activeMembership->execute($matrix->company_id, $data['approver_user_id']);
 
             if (! $isMember) {
                 throw ValidationException::withMessages([
