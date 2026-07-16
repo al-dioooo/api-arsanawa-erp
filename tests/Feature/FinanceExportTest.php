@@ -9,6 +9,8 @@ use App\Modules\Organization\Models\Membership;
 use App\Modules\Partners\Models\Partner;
 use App\Modules\Pos\Models\Sale;
 use Database\Seeders\CurrencySeeder;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -16,6 +18,26 @@ beforeEach(function (): void {
     setPermissionsTeamId(null);
     $this->seed(CurrencySeeder::class);
 });
+
+/**
+ * Download an export over HTTP and read the real workbook back, so these tests
+ * pin the produced file rather than the library that produced it.
+ */
+function downloadedSheet(string $token, int $companyId, string $kind): Worksheet
+{
+    $response = test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+        ->get("/api/v1/finance/exports/{$kind}.xlsx")
+        ->assertOk();
+
+    $path = tempnam(sys_get_temp_dir(), 'export').'.xlsx';
+    file_put_contents($path, $response->streamedContent());
+
+    try {
+        return IOFactory::load($path)->getActiveSheet();
+    } finally {
+        @unlink($path);
+    }
+}
 
 function makePayment(int $companyId, int $cashAccountId, string $type, string $amount, string $status = 'posted'): Payment
 {
@@ -86,6 +108,44 @@ describe('Income export', function () {
                 'content-type',
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             );
+    });
+
+    it('streams a workbook whose sheet, headings and rows match the export', function (): void {
+        [, $token, $companyId, $branchId] = financeActor();
+        $cash = createAccount($token, $companyId, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+
+        makePayment($companyId, $cash, 'inbound', '100000.0000');
+        makeCompletedSale($companyId, $branchId, '250000.0000');
+
+        $sheet = downloadedSheet($token, $companyId, 'income');
+
+        expect($sheet->getTitle())->toBe('Income')
+            ->and($sheet->rangeToArray('A1:F1', null, true, false)[0])
+            ->toBe(['Date', 'Source', 'Reference', 'Party', 'Method', 'Amount'])
+            ->and($sheet->getStyle('A1')->getFont()->getBold())->toBeTrue();
+
+        // Two income rows land under the header, and amounts stay numeric.
+        $rows = $sheet->toArray(null, true, false, false);
+        expect($rows)->toHaveCount(3);
+        expect(array_column(array_slice($rows, 1), 1))->toEqualCanonicalizing(['Payment', 'POS Sale']);
+        expect(array_sum(array_column(array_slice($rows, 1), 5)))->toBe(350000.0);
+    });
+
+    it('streams an expense workbook with its own sheet name and headings', function (): void {
+        [, $token, $companyId] = financeActor();
+        $cash = createAccount($token, $companyId, ['code' => '1-1010', 'name' => 'Cash', 'type' => 'asset']);
+        makePayment($companyId, $cash, 'outbound', '70000.0000');
+
+        $sheet = downloadedSheet($token, $companyId, 'expense');
+
+        expect($sheet->getTitle())->toBe('Expense')
+            ->and($sheet->rangeToArray('A1:E1', null, true, false)[0])
+            ->toBe(['Date', 'Reference', 'Supplier', 'Method', 'Amount'])
+            ->and($sheet->getStyle('A1')->getFont()->getBold())->toBeTrue();
+
+        $rows = $sheet->toArray(null, true, false, false);
+        expect($rows)->toHaveCount(2)
+            ->and($rows[1][4])->toBe(70000.0);
     });
 
     it('rejects non-xlsx formats via the route constraint', function (): void {
