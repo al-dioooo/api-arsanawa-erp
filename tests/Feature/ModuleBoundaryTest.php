@@ -3,14 +3,17 @@
 use Symfony\Component\Finder\Finder;
 
 /**
- * Modules may not import each other's Models (AGENTS.md). Two carve-outs:
+ * Modules may not import each other's Models (AGENTS.md). One carve-out:
  *
  * - Files inside a module's Models/ directory may reference other modules'
  *   models to declare cross-module FK relations (Bill→Partner, Sale→Currency,
  *   ...). These are read-only object graphs, not behavioural coupling.
- * - The LEGACY_BASELINE below freezes the violations that existed when this
- *   guard was introduced. The list may only SHRINK: fix a file, delete its
- *   entry. Adding an entry needs an architectural decision, not a convenience.
+ *
+ * The LEGACY_BASELINE froze the 14 violations that existed when this guard was
+ * introduced; all of them have since been routed through the owning module's
+ * Actions and Services, so it is now empty and must stay that way. Reach for a
+ * read contract (a DTO-returning Action) or a write contract (an Action on the
+ * owning module) instead of adding an entry back.
  */
 const LEGACY_BASELINE = [];
 
