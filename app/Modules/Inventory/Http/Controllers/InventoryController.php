@@ -836,6 +836,16 @@ class InventoryController extends Controller
         );
     }
 
+    public function resolvePrices(StockQueryRequest $request, ResolvePrice $action): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+
+        return $this->success(
+            $action->executeForCompany($companyId, $request->query()),
+            __('Prices resolved.'),
+        );
+    }
+
     // --- Discounts ---------------------------------------------------------
 
     public function discounts(ListDiscountsRequest $request): JsonResponse

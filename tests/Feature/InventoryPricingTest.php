@@ -92,6 +92,55 @@ describe('Inventory pricing', function () {
             ->assertJsonPath('data.price', '30000.0000');
     });
 
+    it('batch-resolves effective prices for all company variants', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Juice',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'BATCH-1'], ['sku' => 'BATCH-2']],
+        ]);
+        $variants = test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->json('data.product.variants');
+        $variantA = $variants[0]['id'];
+
+        $priceListId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/inventory/price-lists', ['name' => 'Retail'])
+            ->assertCreated()
+            ->json('data.price_list.id');
+
+        // Variant A: 10000 from Jan, 12000 from June. Variant B stays unpriced.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/price-lists/{$priceListId}/prices", [
+                'product_variant_id' => $variantA,
+                'price' => 10000,
+                'effective_from' => '2026-01-01',
+            ])->assertSuccessful();
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/price-lists/{$priceListId}/prices", [
+                'product_variant_id' => $variantA,
+                'price' => 12000,
+                'effective_from' => '2026-06-01',
+            ])->assertSuccessful();
+
+        // On March only the Jan price is effective; the unpriced variant is absent.
+        $march = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/inventory/prices/resolve?on=2026-03-01')
+            ->assertSuccessful()
+            ->json('data.prices');
+        expect($march)->toHaveCount(1);
+        expect($march[0]['product_variant_id'])->toBe($variantA);
+        expect($march[0]['price'])->toBe('10000.0000');
+
+        // On July the June price wins.
+        $july = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/inventory/prices/resolve?on=2026-07-01')
+            ->assertSuccessful()
+            ->json('data.prices');
+        expect(collect($july)->firstWhere('product_variant_id', $variantA)['price'])->toBe('12000.0000');
+    });
+
     it('lists price lists for the company', function (): void {
         [, $token, $companyId] = inventoryActor();
 
