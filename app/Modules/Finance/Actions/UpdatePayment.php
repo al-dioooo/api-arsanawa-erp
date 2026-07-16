@@ -9,12 +9,14 @@ use App\Modules\Finance\Models\Invoice;
 use App\Modules\Finance\Models\Payment;
 use App\Modules\Finance\Models\PaymentAllocation;
 use App\Modules\Finance\Services\ApprovalService;
-use App\Modules\Partners\Models\Partner;
+use App\Modules\Partners\Actions\CheckPartnerBelongsToCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class UpdatePayment
 {
+    public function __construct(private readonly CheckPartnerBelongsToCompany $companyPartner) {}
+
     /**
      * Update a draft payment.
      *
@@ -50,16 +52,10 @@ class UpdatePayment
         $companyId = $payment->company_id;
 
         // 1. Validate partner if updated
-        if (isset($data['partner_id'])) {
-            $partner = Partner::query()
-                ->where('company_id', $companyId)
-                ->find($data['partner_id']);
-
-            if (! $partner) {
-                throw ValidationException::withMessages([
-                    'partner_id' => [__('The selected partner is invalid or does not belong to this company.')],
-                ]);
-            }
+        if (isset($data['partner_id']) && ! $this->companyPartner->execute($companyId, $data['partner_id'])) {
+            throw ValidationException::withMessages([
+                'partner_id' => [__('The selected partner is invalid or does not belong to this company.')],
+            ]);
         }
 
         // 2. Validate cash account if updated

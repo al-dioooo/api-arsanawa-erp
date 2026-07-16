@@ -8,13 +8,15 @@ use App\Modules\Finance\Models\Bill;
 use App\Modules\Finance\Models\Invoice;
 use App\Modules\Finance\Models\Payment;
 use App\Modules\Finance\Models\PaymentAllocation;
-use App\Modules\Partners\Models\Partner;
+use App\Modules\Partners\Actions\CheckPartnerBelongsToCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CreatePayment
 {
+    public function __construct(private readonly CheckPartnerBelongsToCompany $companyPartner) {}
+
     /**
      * Create a draft payment with optional allocations.
      *
@@ -42,11 +44,7 @@ class CreatePayment
     public function execute(int $companyId, User $user, array $data): Payment
     {
         // 1. Validate partner
-        $partner = Partner::query()
-            ->where('company_id', $companyId)
-            ->find($data['partner_id']);
-
-        if (! $partner) {
+        if (! $this->companyPartner->execute($companyId, $data['partner_id'])) {
             throw ValidationException::withMessages([
                 'partner_id' => [__('The selected partner is invalid or does not belong to this company.')],
             ]);
