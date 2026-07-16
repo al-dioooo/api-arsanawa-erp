@@ -13,7 +13,6 @@ use Symfony\Component\Finder\Finder;
  *   entry. Adding an entry needs an architectural decision, not a convenience.
  */
 const LEGACY_BASELINE = [
-    'app/Modules/Finance/Exports/IncomeExport.php',
     'app/Modules/Platform/Services/InventoryProductImportProcessor.php',
     'app/Modules/Platform/Services/PosCateringImportProcessor.php',
     'app/Modules/Pos/Actions/CompleteSale.php',

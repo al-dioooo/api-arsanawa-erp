@@ -3,8 +3,8 @@
 namespace App\Modules\Finance\Exports;
 
 use App\Modules\Finance\Models\Payment;
-use App\Modules\Pos\Models\Sale;
-use Illuminate\Support\Carbon;
+use App\Modules\Pos\Actions\ListCompletedSaleIncome;
+use App\Modules\Pos\Support\SaleIncomeRow;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -59,28 +59,15 @@ class IncomeExport implements FromCollection, ShouldAutoSize, WithHeadings, With
                 'amount' => (float) $p->amount,
             ]);
 
-        $sales = Sale::query()
-            ->where('sales.company_id', $this->companyId)
-            ->leftJoin('partners', 'partners.id', '=', 'sales.partner_id')
-            ->where('sales.status', 'completed')
-            ->when($this->from, fn ($q) => $q->where('sales.completed_at', '>=', $this->from))
-            ->when($this->to, fn ($q) => $q->where('sales.completed_at', '<', Carbon::parse($this->to)->addDay()->toDateString()))
-            ->select([
-                'sales.completed_at',
-                'sales.order_date',
-                'sales.sale_number',
-                'sales.customer_name',
-                'sales.total',
-                'partners.name as partner_name',
-            ])
-            ->cursor()
-            ->map(fn (Sale $s): array => [
-                'date' => optional($s->completed_at ?? $s->order_date)->format('Y-m-d') ?? '',
+        $sales = app(ListCompletedSaleIncome::class)
+            ->execute($this->companyId, $this->from, $this->to)
+            ->map(fn (SaleIncomeRow $s): array => [
+                'date' => $s->date,
                 'source' => 'POS Sale',
-                'reference' => (string) $s->sale_number,
-                'party' => (string) ($s->customer_name ?: ($s->partner_name ?? '')),
+                'reference' => $s->reference,
+                'party' => $s->party,
                 'method' => 'POS',
-                'amount' => (float) $s->total,
+                'amount' => $s->amount,
             ]);
 
         return $payments->collect()->concat($sales->collect())->sortBy('date')->values();
