@@ -2726,6 +2726,7 @@ paths:
           required: true
           schema:
             type: integer
+          description: 'Route model identifier.'
         -
           name: product_variant_id
           in: query
@@ -2733,7 +2734,6 @@ paths:
           schema:
             type: integer
           description: 'Filter price rows to one product variant.'
-          description: 'Route model identifier.'
       responses:
         200:
           $ref: '#/components/responses/Success'

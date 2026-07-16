@@ -113,6 +113,27 @@ describe('Inventory product variants', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.product.variants.0.branch_availability.0.branch_id', $branchId)
             ->assertJsonPath('data.product.variants.0.branch_availability.0.is_available', false);
+
+        // An availability-only update must not clobber the stored exclusivity.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/products/{$productId}/variants/{$variantId}/availability", [
+                'branch_id' => $branchId,
+                'is_available' => true,
+                'is_exclusive' => true,
+            ])->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/products/{$productId}/variants/{$variantId}/availability", [
+                'branch_id' => $branchId,
+                'is_available' => false,
+            ])->assertSuccessful();
+
+        $this->assertDatabaseHas('product_branch_availability', [
+            'branch_id' => $branchId,
+            'product_variant_id' => $variantId,
+            'is_available' => false,
+            'is_exclusive' => true,
+        ]);
     });
 
     it('clears all product tags with an empty array', function (): void {
