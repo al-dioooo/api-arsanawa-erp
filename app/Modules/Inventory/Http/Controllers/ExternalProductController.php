@@ -27,15 +27,81 @@ class ExternalProductController extends Controller
                 'variants' => fn ($query) => $query->where('is_active', true)->orderBy('sku'),
             ])
             ->orderBy('name')
-            ->get()
-            ->map(fn (Product $product): array => $this->transformProduct($product, $companyId, $branchId, $on))
+            ->get();
+
+        // Batch-resolve prices and availability for every variant up front to
+        // avoid a query per variant on this polled catalog endpoint.
+        $variantIds = $products->flatMap(fn (Product $product): array => $product->variants->pluck('id')->all())->all();
+        $priceMap = $this->priceMap($companyId, $variantIds, $on);
+        $availabilityMap = $this->availabilityMap($companyId, $variantIds, $branchId);
+
+        $transformed = $products
+            ->map(fn (Product $product): array => $this->transformProduct($product, $priceMap, $availabilityMap))
             ->filter(fn (array $product): bool => $product['variants'] !== [])
             ->values();
 
         return $this->success(
-            ['products' => $products],
+            ['products' => $transformed],
             __('Products retrieved.'),
         );
+    }
+
+    /**
+     * Latest effective price per variant, eager-loaded, resolved in one query.
+     *
+     * @param  array<int, int>  $variantIds
+     * @return array<int, Price>
+     */
+    private function priceMap(int $companyId, array $variantIds, string $on): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+
+        $prices = Price::query()
+            ->with(['priceList', 'productUnit.images'])
+            ->whereIn('product_variant_id', $variantIds)
+            ->where('effective_from', '<=', $on)
+            ->where(function ($query) use ($on): void {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $on);
+            })
+            ->whereHas('priceList', fn ($query) => $query
+                ->where('company_id', $companyId)
+                ->where('is_active', true))
+            ->orderByDesc('effective_from')
+            ->latest('id')
+            ->get();
+
+        $map = [];
+        foreach ($prices as $price) {
+            // Rows are ordered newest-first, so keep the first seen per variant.
+            $map[$price->product_variant_id] ??= $price;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Availability flag per variant for the branch, resolved in one query.
+     * A missing row means available.
+     *
+     * @param  array<int, int>  $variantIds
+     * @return array<int, bool>
+     */
+    private function availabilityMap(int $companyId, array $variantIds, ?int $branchId): array
+    {
+        if ($branchId === null || $variantIds === []) {
+            return [];
+        }
+
+        return DB::table('product_branch_availability')
+            ->where('company_id', $companyId)
+            ->where('branch_id', $branchId)
+            ->whereIn('product_variant_id', $variantIds)
+            ->pluck('is_available', 'product_variant_id')
+            ->map(fn ($isAvailable): bool => (bool) $isAvailable)
+            ->all();
     }
 
     public function price(Request $request, int $variant): JsonResponse
@@ -61,12 +127,16 @@ class ExternalProductController extends Controller
         );
     }
 
-    private function transformProduct(Product $product, int $companyId, ?int $branchId, string $on): array
+    /**
+     * @param  array<int, Price>  $priceMap
+     * @param  array<int, bool>  $availabilityMap
+     */
+    private function transformProduct(Product $product, array $priceMap, array $availabilityMap): array
     {
         $variants = $product->variants
-            ->filter(fn (ProductVariant $variant): bool => $this->variantIsAvailable($companyId, $variant->id, $branchId))
-            ->map(function (ProductVariant $variant) use ($companyId, $on): array {
-                $price = $this->resolvePrice($companyId, $variant->id, $on);
+            ->filter(fn (ProductVariant $variant): bool => $availabilityMap[$variant->id] ?? true)
+            ->map(function (ProductVariant $variant) use ($priceMap): array {
+                $price = $priceMap[$variant->id] ?? null;
 
                 return [
                     'id' => $variant->id,
@@ -98,21 +168,6 @@ class ExternalProductController extends Controller
             'images' => $this->imageMetadata($product->images),
             'variants' => $variants,
         ];
-    }
-
-    private function variantIsAvailable(int $companyId, int $variantId, ?int $branchId): bool
-    {
-        if ($branchId === null) {
-            return true;
-        }
-
-        $availability = DB::table('product_branch_availability')
-            ->where('company_id', $companyId)
-            ->where('branch_id', $branchId)
-            ->where('product_variant_id', $variantId)
-            ->first();
-
-        return $availability === null || (bool) $availability->is_available;
     }
 
     private function resolvePrice(int $companyId, int $variantId, string $on): ?Price
