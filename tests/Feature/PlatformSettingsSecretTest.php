@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Platform\Services\WhatsApp\WhatsAppService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -89,6 +91,69 @@ describe('secret platform settings', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.settings.0.is_secret', false)
             ->assertJsonPath('data.settings.0.value', '628123456789');
+    });
+
+    it('stores the credential encrypted at rest', function (): void {
+        [, $token] = financeActor();
+        upsertWhatsAppToken($token, 'super-secret-token');
+
+        $stored = DB::table('settings')->where('module', 'whatsapp')->where('key', 'token')->value('value');
+
+        expect($stored)->not->toContain('super-secret-token')
+            ->and($stored)->toStartWith('"enc:v1:');
+    });
+
+    it('still reads credentials written before encryption existed', function (): void {
+        [, $token, $companyId] = financeActor();
+        // Establish the row through the normal path, then overwrite it with a
+        // bare legacy value exactly as an older release would have stored it.
+        upsertWhatsAppToken($token, 'placeholder');
+        DB::table('settings')->where('module', 'whatsapp')->where('key', 'token')
+            ->update(['value' => json_encode('legacy-token')]);
+
+        expect(app(WhatsAppService::class)->credentialsFor($companyId)['token'])->toBe('legacy-token');
+    });
+
+    it('sends using the decrypted credential', function (): void {
+        [, $token, $companyId] = financeActor();
+        config([
+            'services.whatsapp.enabled' => true,
+            'services.whatsapp.driver' => 'fonnte',
+        ]);
+        Http::fake();
+
+        upsertWhatsAppToken($token, 'super-secret-token');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/platform/whatsapp/test', ['to' => '08123456789'])
+            ->assertOk();
+
+        // The regression guard for encryption: the wire must carry plaintext.
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'super-secret-token'));
+    });
+
+    it('backfills legacy plaintext exactly once, and can be rolled back', function (): void {
+        [, $token, $companyId] = financeActor();
+        upsertWhatsAppToken($token, 'placeholder');
+        DB::table('settings')->where('module', 'whatsapp')->where('key', 'token')
+            ->update(['value' => json_encode('legacy-token')]);
+
+        $migration = require base_path('app/Modules/Platform/database/migrations/2026_07_16_000000_encrypt_secret_settings.php');
+
+        $migration->up();
+        $afterFirst = DB::table('settings')->where('module', 'whatsapp')->where('key', 'token')->value('value');
+
+        // Running it again must not encrypt the ciphertext a second time.
+        $migration->up();
+        $afterSecond = DB::table('settings')->where('module', 'whatsapp')->where('key', 'token')->value('value');
+
+        expect($afterFirst)->toStartWith('"enc:v1:')
+            ->and($afterSecond)->toBe($afterFirst)
+            ->and(app(WhatsAppService::class)->credentialsFor($companyId)['token'])->toBe('legacy-token');
+
+        $migration->down();
+        expect(DB::table('settings')->where('module', 'whatsapp')->where('key', 'token')->value('value'))
+            ->toBe(json_encode('legacy-token'));
     });
 
     it('still serves settings for a module a client wrote an encryption-marker string into', function (): void {
