@@ -4,8 +4,9 @@ namespace App\Modules\Pos\Actions;
 
 use App\Models\User;
 use App\Modules\Finance\Services\PostingService;
-use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Actions\ListIssuedStock;
 use App\Modules\Inventory\Services\StockService;
+use App\Modules\Inventory\Support\IssuedStock;
 use App\Modules\Pos\Models\Sale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +16,7 @@ class VoidSale
     public function __construct(
         private readonly PostingService $postingService,
         private readonly StockService $stockService,
+        private readonly ListIssuedStock $issuedStock,
     ) {}
 
     /**
@@ -39,18 +41,14 @@ class VoidSale
                 $this->postingService->reverse($sale->cogsJournalEntry, $user);
             }
 
-            StockMovement::query()
-                ->where('reference_type', Sale::class)
-                ->where('reference_id', $sale->id)
-                ->where('type', 'issue')
-                ->get()
-                ->each(function (StockMovement $movement) use ($sale, $user): void {
+            $this->issuedStock->execute(Sale::class, $sale->id)
+                ->each(function (IssuedStock $movement) use ($sale, $user): void {
                     $this->stockService->recordReceipt([
                         'company_id' => $sale->company_id,
-                        'branch_id' => $movement->branch_id,
-                        'product_variant_id' => $movement->product_variant_id,
-                        'quantity' => ltrim((string) $movement->quantity, '-'),
-                        'unit_cost' => $movement->unit_cost,
+                        'branch_id' => $movement->branchId,
+                        'product_variant_id' => $movement->productVariantId,
+                        'quantity' => ltrim($movement->quantity, '-'),
+                        'unit_cost' => $movement->unitCost,
                         'reference_type' => Sale::class,
                         'reference_id' => $sale->id,
                         'notes' => 'Void POS sale '.$sale->sale_number,
