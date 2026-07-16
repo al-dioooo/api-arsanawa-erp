@@ -3,9 +3,10 @@
 namespace App\Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Inventory\Http\Resources\External\ExternalPriceResource;
+use App\Modules\Inventory\Http\Resources\External\ExternalProductResource;
 use App\Modules\Inventory\Models\Price;
 use App\Modules\Inventory\Models\Product;
-use App\Modules\Inventory\Models\ProductImage;
 use App\Modules\Inventory\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class ExternalProductController extends Controller
         $availabilityMap = $this->availabilityMap($companyId, $variantIds, $branchId);
 
         $transformed = $products
-            ->map(fn (Product $product): array => $this->transformProduct($product, $priceMap, $availabilityMap))
+            ->map(fn (Product $product): array => (new ExternalProductResource($product, $priceMap, $availabilityMap))->resolve($request))
             ->filter(fn (array $product): bool => $product['variants'] !== [])
             ->values();
 
@@ -117,59 +118,18 @@ class ExternalProductController extends Controller
         $price = $this->resolvePrice($companyId, $resolvedVariant->id, $on);
 
         return $this->success(
-            [
-                'product_variant_id' => $resolvedVariant->id,
-                'price' => $price?->price,
-                'maximum_retail_price' => $price?->maximum_retail_price,
-                'currency_id' => $price?->priceList?->currency_id,
-            ],
+            (new ExternalPriceResource($resolvedVariant, $price))->resolve($request),
             __('Price resolved.'),
         );
     }
 
     /**
-     * @param  array<int, Price>  $priceMap
-     * @param  array<int, bool>  $availabilityMap
+     * Latest effective price for one variant on the given date.
+     *
+     * Deliberately not delegated to the shared ResolvePrice action: this
+     * external endpoint additionally scopes the price list to the api-key
+     * company and to active price lists, which the shared action does not.
      */
-    private function transformProduct(Product $product, array $priceMap, array $availabilityMap): array
-    {
-        $variants = $product->variants
-            ->filter(fn (ProductVariant $variant): bool => $availabilityMap[$variant->id] ?? true)
-            ->map(function (ProductVariant $variant) use ($priceMap): array {
-                $price = $priceMap[$variant->id] ?? null;
-
-                return [
-                    'id' => $variant->id,
-                    'product_id' => $variant->product_id,
-                    'sku' => $variant->sku,
-                    'barcode' => $variant->barcode,
-                    'name' => $variant->name,
-                    'attributes' => $variant->attributes,
-                    'price' => $price?->price,
-                    'maximum_retail_price' => $price?->maximum_retail_price,
-                    'currency_id' => $price?->priceList?->currency_id,
-                    'product_unit' => $price?->productUnit ? [
-                        'id' => $price->productUnit->id,
-                        'sku' => $price->productUnit->sku,
-                        'barcode' => $price->productUnit->barcode,
-                        'name' => $price->productUnit->name,
-                        'images' => $this->imageMetadata($price->productUnit->images),
-                    ] : null,
-                ];
-            })
-            ->values()
-            ->all();
-
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'attributes' => $product->attributes,
-            'images' => $this->imageMetadata($product->images),
-            'variants' => $variants,
-        ];
-    }
-
     private function resolvePrice(int $companyId, int $variantId, string $on): ?Price
     {
         return Price::query()
@@ -223,24 +183,5 @@ class ExternalProductController extends Controller
         }
 
         return $on;
-    }
-
-    private function imageMetadata($images): array
-    {
-        return $images
-            ->map(fn (ProductImage $image): array => [
-                'id' => $image->id,
-                'url' => $image->url,
-                'original_url' => $image->original_url,
-                'alt_text' => $image->alt_text,
-                'mime_type' => $image->mime_type,
-                'size_bytes' => $image->size_bytes,
-                'width' => $image->width,
-                'height' => $image->height,
-                'is_primary' => $image->is_primary,
-                'sort_order' => $image->sort_order,
-            ])
-            ->values()
-            ->all();
     }
 }
