@@ -169,6 +169,15 @@ describe('Finance Invoices', function () {
             ->assertJsonPath('data.invoices.0.partner_id', $partner1->id);
     });
 
+    it('rejects an oversized per_page to prevent unbounded reads', function (): void {
+        [, $token, $companyId] = financeActor();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/finance/invoices?per_page=1000')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('per_page');
+    });
+
     it('filters invoices by invoice date range', function (): void {
         [, $token, $companyId] = financeActor();
 

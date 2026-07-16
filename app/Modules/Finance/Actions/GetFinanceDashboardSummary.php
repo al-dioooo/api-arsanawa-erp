@@ -60,23 +60,27 @@ class GetFinanceDashboardSummary
             ? Carbon::parse((string) $filters['end_date'])->startOfDay()
             : now()->endOfMonth()->startOfDay();
 
+        // Aggregate per day in SQL rather than hydrating every invoice/bill and
+        // summing in PHP. Plain date comparisons keep the composite index usable.
         $incomeByDate = Invoice::query()
             ->forCompany($companyId)
             ->whereIn('status', ['posted', 'partially_paid', 'paid'])
-            ->whereDate('invoice_date', '>=', $startDate->toDateString())
-            ->whereDate('invoice_date', '<=', $endDate->toDateString())
-            ->get(['invoice_date', 'total'])
-            ->groupBy(fn (Invoice $invoice): string => $invoice->invoice_date->toDateString())
-            ->map(fn ($invoices): float => (float) $invoices->sum(fn (Invoice $invoice): float => (float) $invoice->total));
+            ->where('invoice_date', '>=', $startDate->toDateString())
+            ->where('invoice_date', '<=', $endDate->toDateString())
+            ->groupBy('invoice_date')
+            ->selectRaw('invoice_date, SUM(total) as total')
+            ->get()
+            ->mapWithKeys(fn (Invoice $row): array => [$row->invoice_date->toDateString() => (float) $row->total]);
 
         $expenseByDate = Bill::query()
             ->forCompany($companyId)
             ->whereIn('status', ['posted', 'partially_paid', 'paid'])
-            ->whereDate('bill_date', '>=', $startDate->toDateString())
-            ->whereDate('bill_date', '<=', $endDate->toDateString())
-            ->get(['bill_date', 'total'])
-            ->groupBy(fn (Bill $bill): string => $bill->bill_date->toDateString())
-            ->map(fn ($bills): float => (float) $bills->sum(fn (Bill $bill): float => (float) $bill->total));
+            ->where('bill_date', '>=', $startDate->toDateString())
+            ->where('bill_date', '<=', $endDate->toDateString())
+            ->groupBy('bill_date')
+            ->selectRaw('bill_date, SUM(total) as total')
+            ->get()
+            ->mapWithKeys(fn (Bill $row): array => [$row->bill_date->toDateString() => (float) $row->total]);
 
         $series = [];
         $cursor = $startDate->copy();

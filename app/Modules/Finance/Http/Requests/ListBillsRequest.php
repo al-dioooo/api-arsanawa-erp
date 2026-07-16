@@ -21,7 +21,7 @@ class ListBillsRequest extends FormRequest
             'status' => ['sometimes', 'nullable', 'string', 'in:draft,posted,partially_paid,paid,void'],
             'start_date' => ['sometimes', 'nullable', 'date'],
             'end_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_date'],
-            'per_page' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 }
