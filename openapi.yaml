@@ -2726,6 +2726,13 @@ paths:
           required: true
           schema:
             type: integer
+        -
+          name: product_variant_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: 'Filter price rows to one product variant.'
           description: 'Route model identifier.'
       responses:
         200:
