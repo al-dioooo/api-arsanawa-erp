@@ -20,7 +20,6 @@ const LEGACY_BASELINE = [
     'app/Modules/Finance/Exports/IncomeExport.php',
     'app/Modules/Platform/Services/InventoryProductImportProcessor.php',
     'app/Modules/Platform/Services/PosCateringImportProcessor.php',
-    'app/Modules/Platform/Services/SpreadsheetImportService.php',
     'app/Modules/Pos/Actions/CompleteSale.php',
     'app/Modules/Pos/Actions/VoidSale.php',
     'app/Modules/Pos/Jobs/SendSaleReceipt.php',
