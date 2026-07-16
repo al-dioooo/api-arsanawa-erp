@@ -24,6 +24,11 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
+        <!-- The array store is per-container, so limiter counts cannot leak between
+             tests. The file store would persist, and LazilyRefreshDatabase resets
+             user ids, so buckets would collide across tests. -->
+        <env name="CACHE_LIMITER_STORE" value="array"/>
+        <env name="RATE_LIMIT_ENABLED" value="false"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>

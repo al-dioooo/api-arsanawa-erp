@@ -33,7 +33,8 @@ Route::prefix('v1/auth')
         Route::middleware(['auth:api', 'organization.company-context'])->group(function (): void {
             Route::get('me', [AuthenticationController::class, 'me'])->name('me');
             Route::post('logout', [AuthenticationController::class, 'logout'])->name('logout');
-            Route::post('refresh', [AuthenticationController::class, 'refresh'])->name('refresh');
+            Route::post('refresh', [AuthenticationController::class, 'refresh'])
+                ->middleware('throttle:refresh')->name('refresh');
         });
     });
 
@@ -84,7 +85,10 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::delete('companies/{company}/branches/{branch}/assignments/{user}', [OrganizationController::class, 'destroyBranchAssignment'])->name('companies.branches.assignments.destroy');
     });
 
+// Partner-facing endpoints keep their own (higher) external-api ceiling and are
+// excluded from the per-user api throttle, which cannot key an API-key caller.
 Route::middleware(['external.api-key', 'throttle:external-api'])
+    ->withoutMiddleware('throttle:api')
     ->prefix('v1/external')
     ->name('api.v1.external.')
     ->group(function (): void {
@@ -128,7 +132,8 @@ Route::middleware(['auth:api', 'organization.company-context'])
     ->prefix('v1/inventory')
     ->name('api.v1.inventory.')
     ->group(function (): void {
-        Route::get('dashboard', [InventoryController::class, 'dashboard'])->name('dashboard.show');
+        Route::get('dashboard', [InventoryController::class, 'dashboard'])
+            ->middleware('throttle:dashboard')->name('dashboard.show');
 
         Route::get('categories', [InventoryController::class, 'categories'])->name('categories.index');
         Route::post('categories', [InventoryController::class, 'storeCategory'])->name('categories.store');
@@ -171,10 +176,12 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::get('products', [InventoryController::class, 'products'])->name('products.index');
         Route::post('products', [InventoryController::class, 'storeProduct'])->name('products.store');
         Route::get('products/imports/template.{format}', [SpreadsheetImportController::class, 'inventoryTemplate'])->name('products.imports.template');
-        Route::post('products/imports/inspect', [SpreadsheetImportController::class, 'inventoryInspect'])->name('products.imports.inspect');
+        Route::post('products/imports/inspect', [SpreadsheetImportController::class, 'inventoryInspect'])
+            ->middleware('throttle:heavy')->name('products.imports.inspect');
         Route::get('products/imports/{import}', [SpreadsheetImportController::class, 'inventoryShow'])->name('products.imports.show');
         Route::post('products/imports/{import}/preview', [SpreadsheetImportController::class, 'inventoryPreview'])->name('products.imports.preview');
-        Route::post('products/imports/{import}/commit', [SpreadsheetImportController::class, 'inventoryCommit'])->name('products.imports.commit');
+        Route::post('products/imports/{import}/commit', [SpreadsheetImportController::class, 'inventoryCommit'])
+            ->middleware('throttle:heavy')->name('products.imports.commit');
         Route::get('products/{product}', [InventoryController::class, 'showProduct'])->name('products.show');
         Route::patch('products/{product}', [InventoryController::class, 'updateProduct'])->name('products.update');
         Route::delete('products/{product}', [InventoryController::class, 'destroyProduct'])->name('products.destroy');
@@ -221,7 +228,8 @@ Route::middleware(['auth:api', 'organization.company-context'])
     ->prefix('v1/finance')
     ->name('api.v1.finance.')
     ->group(function (): void {
-        Route::get('dashboard', [FinanceController::class, 'dashboard'])->name('dashboard.show');
+        Route::get('dashboard', [FinanceController::class, 'dashboard'])
+            ->middleware('throttle:dashboard')->name('dashboard.show');
 
         // Accounts
         Route::get('accounts', [FinanceController::class, 'accounts'])->name('accounts.index');
@@ -279,13 +287,17 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::post('payments/{payment}/void', [FinanceController::class, 'voidPayment'])->name('payments.void');
 
         // Reports
-        Route::get('reports/trial-balance', [FinanceController::class, 'trialBalance'])->name('reports.trial-balance');
-        Route::get('reports/account-ledger', [FinanceController::class, 'accountLedger'])->name('reports.account-ledger');
+        Route::get('reports/trial-balance', [FinanceController::class, 'trialBalance'])
+            ->middleware('throttle:heavy')->name('reports.trial-balance');
+        Route::get('reports/account-ledger', [FinanceController::class, 'accountLedger'])
+            ->middleware('throttle:heavy')->name('reports.account-ledger');
 
         // Exports (XLSX)
         Route::get('exports/income.{format}', [FinanceExportController::class, 'income'])
+            ->middleware('throttle:heavy')
             ->where('format', 'xlsx')->name('exports.income');
         Route::get('exports/expense.{format}', [FinanceExportController::class, 'expense'])
+            ->middleware('throttle:heavy')
             ->where('format', 'xlsx')->name('exports.expense');
 
         // Approval Matrices
@@ -312,16 +324,19 @@ Route::middleware(['auth:api', 'organization.company-context'])
     ->prefix('v1/pos')
     ->name('api.v1.pos.')
     ->group(function (): void {
-        Route::get('dashboard', [PosController::class, 'dashboard'])->name('dashboard.show');
+        Route::get('dashboard', [PosController::class, 'dashboard'])
+            ->middleware('throttle:dashboard')->name('dashboard.show');
 
         Route::get('sales', [PosController::class, 'sales'])->name('sales.index');
         Route::post('sales', [PosController::class, 'storeSale'])->name('sales.store');
         Route::get('sales/imports/template.{format}', [SpreadsheetImportController::class, 'posTemplate'])->name('sales.imports.template');
-        Route::post('sales/imports/inspect', [SpreadsheetImportController::class, 'posInspect'])->name('sales.imports.inspect');
+        Route::post('sales/imports/inspect', [SpreadsheetImportController::class, 'posInspect'])
+            ->middleware('throttle:heavy')->name('sales.imports.inspect');
         Route::post('sales/imports/configured/preview', [SpreadsheetImportController::class, 'posConfiguredPreview'])->name('sales.imports.configured.preview');
         Route::get('sales/imports/{import}', [SpreadsheetImportController::class, 'posShow'])->name('sales.imports.show');
         Route::post('sales/imports/{import}/preview', [SpreadsheetImportController::class, 'posPreview'])->name('sales.imports.preview');
-        Route::post('sales/imports/{import}/commit', [SpreadsheetImportController::class, 'posCommit'])->name('sales.imports.commit');
+        Route::post('sales/imports/{import}/commit', [SpreadsheetImportController::class, 'posCommit'])
+            ->middleware('throttle:heavy')->name('sales.imports.commit');
         Route::get('sales/{sale}', [PosController::class, 'showSale'])->name('sales.show');
         Route::patch('sales/{sale}', [PosController::class, 'updateSale'])->name('sales.update');
         Route::post('sales/{sale}/apply-promotions', [PosController::class, 'applyPromotions'])->name('sales.apply-promotions');
@@ -332,7 +347,8 @@ Route::middleware(['auth:api', 'organization.company-context'])
         Route::post('sales/{sale}/payments', [PosController::class, 'addSalePayment'])->name('sales.payments.store');
         Route::delete('sales/{sale}/payments/{payment}', [PosController::class, 'removeSalePayment'])->name('sales.payments.destroy');
 
-        Route::get('reports/sales', [PosController::class, 'salesReport'])->name('reports.sales');
+        Route::get('reports/sales', [PosController::class, 'salesReport'])
+            ->middleware('throttle:heavy')->name('reports.sales');
         Route::get('reports/shifts/{shift}', [PosController::class, 'shiftReport'])->name('reports.shifts.show');
 
         Route::get('registers', [PosController::class, 'registers'])->name('registers.index');

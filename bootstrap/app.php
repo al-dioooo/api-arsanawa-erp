@@ -11,12 +11,14 @@ use App\Modules\Organization\Providers\OrganizationServiceProvider;
 use App\Modules\Partners\Providers\PartnersServiceProvider;
 use App\Modules\Platform\Providers\PlatformServiceProvider;
 use App\Modules\Pos\Providers\PosServiceProvider;
+use App\Providers\RateLimitServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
+        RateLimitServiceProvider::class,
         AuthenticationServiceProvider::class,
         IdentityServiceProvider::class,
         OrganizationServiceProvider::class,
@@ -34,6 +36,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
+
+        // Every API route inherits a ceiling by default; new route groups are
+        // therefore fail-closed. Limiters live in RateLimitServiceProvider.
+        $middleware->throttleApi('api');
 
         $middleware->alias([
             'external.api-key' => AuthenticateExternalApiKey::class,
