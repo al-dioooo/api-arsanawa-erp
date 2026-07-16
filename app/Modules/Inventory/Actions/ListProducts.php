@@ -9,13 +9,24 @@ use Illuminate\Database\Eloquent\Builder;
 class ListProducts
 {
     /**
-     * @param  array{category_id?: int, brand_id?: int, status?: string, search?: string, per_page?: int}  $filters
+     * @param  array{category_id?: int, brand_id?: int, status?: string, search?: string, include?: string, per_page?: int}  $filters
      */
     public function execute(int $companyId, array $filters = []): LengthAwarePaginator
     {
+        // The nested product-unit tree is heavy and only needed by detail-style
+        // consumers, so the list loads it on request via ?include=product_units.
+        $includes = array_filter(explode(',', $filters['include'] ?? ''));
+
+        $with = ['category', 'brand', 'baseUom', 'variants', 'images', 'tags'];
+
+        if (in_array('product_units', $includes, true)) {
+            $with[] = 'productUnits.images';
+            $with[] = 'productUnits.variants.group.unit';
+        }
+
         $query = Product::query()
             ->forCompany($companyId)
-            ->with(['category', 'brand', 'baseUom', 'variants', 'productUnits.images', 'productUnits.variants.group.unit', 'images', 'tags']);
+            ->with($with);
 
         if (isset($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);

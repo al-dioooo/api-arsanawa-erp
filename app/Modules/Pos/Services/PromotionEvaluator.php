@@ -4,6 +4,7 @@ namespace App\Modules\Pos\Services;
 
 use App\Modules\Inventory\Models\Discount;
 use App\Modules\Inventory\Models\ProductVariant;
+use Illuminate\Database\Eloquent\Collection;
 
 class PromotionEvaluator
 {
@@ -33,12 +34,22 @@ class PromotionEvaluator
             ->orderBy('id')
             ->get();
 
+        // Targeted discounts all match against the same cart, so load the
+        // cart's variants once instead of once per discount.
+        $cartVariants = $discounts->contains(fn (Discount $discount): bool => $discount->targets->isNotEmpty())
+            ? ProductVariant::query()
+                ->whereIn('id', array_column($lines, 'product_variant_id'))
+                ->with('product')
+                ->get()
+                ->keyBy('id')
+            : new Collection;
+
         foreach ($discounts as $discount) {
             if (! $this->dependenciesMet($discount, $lines)) {
                 continue;
             }
 
-            $eligibleLines = $this->eligibleLines($discount, $lines);
+            $eligibleLines = $this->eligibleLines($discount, $lines, $cartVariants);
             $eligibleQuantity = array_reduce(
                 $eligibleLines,
                 static fn (float $carry, array $line): float => $carry + (float) $line['quantity'],
@@ -99,19 +110,14 @@ class PromotionEvaluator
 
     /**
      * @param  array<int, array<string, mixed>>  $lines
+     * @param  Collection<int, ProductVariant>  $variants
      * @return array<int, array<string, mixed>>
      */
-    private function eligibleLines(Discount $discount, array $lines): array
+    private function eligibleLines(Discount $discount, array $lines, Collection $variants): array
     {
         if ($discount->targets->isEmpty()) {
             return array_values(array_filter($lines, static fn (array $line): bool => ! ($line['is_giveaway'] ?? false)));
         }
-
-        $variants = ProductVariant::query()
-            ->whereIn('id', array_column($lines, 'product_variant_id'))
-            ->with('product')
-            ->get()
-            ->keyBy('id');
 
         return array_values(array_filter($lines, function (array $line) use ($discount, $variants): bool {
             if ($line['is_giveaway'] ?? false) {
