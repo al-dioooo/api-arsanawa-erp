@@ -22,12 +22,17 @@ class CheckoutService
      */
     public function calculate(int $companyId, array $lines, ?string $on = null): array
     {
+        // Batch-load every referenced variant once instead of a query per line.
+        $variants = ProductVariant::query()
+            ->forCompany($companyId)
+            ->whereIn('id', array_column($lines, 'product_variant_id'))
+            ->get()
+            ->keyBy('id');
+
         $preparedLines = [];
 
         foreach ($lines as $line) {
-            $variant = ProductVariant::query()
-                ->forCompany($companyId)
-                ->find($line['product_variant_id']);
+            $variant = $variants->get($line['product_variant_id']);
 
             if (! $variant) {
                 throw ValidationException::withMessages([
