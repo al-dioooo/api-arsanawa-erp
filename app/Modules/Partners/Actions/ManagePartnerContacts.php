@@ -5,6 +5,11 @@ namespace App\Modules\Partners\Actions;
 use App\Modules\Partners\Models\Partner;
 use App\Modules\Partners\Models\PartnerContact;
 
+/**
+ * Deliberate exception to the one-execute()-per-Action convention: partner contacts
+ * are a child collection whose add/update/delete share invariants and always
+ * ship together, so the lifecycle lives in one class instead of three files.
+ */
 class ManagePartnerContacts
 {
     /**
