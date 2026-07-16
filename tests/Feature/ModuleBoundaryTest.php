@@ -26,7 +26,6 @@ const LEGACY_BASELINE = [
     'app/Modules/Pos/Jobs/SendSaleReceipt.php',
     'app/Modules/Pos/Services/CheckoutService.php',
     'app/Modules/Pos/Services/PromotionEvaluator.php',
-    'app/Modules/Pos/Support/SaleReceiptMessage.php',
 ];
 
 describe('Module boundaries', function () {
