@@ -18,7 +18,6 @@ const LEGACY_BASELINE = [
     'app/Modules/Platform/Services/PosCateringImportProcessor.php',
     'app/Modules/Pos/Actions/CompleteSale.php',
     'app/Modules/Pos/Actions/VoidSale.php',
-    'app/Modules/Pos/Services/PromotionEvaluator.php',
 ];
 
 describe('Module boundaries', function () {
