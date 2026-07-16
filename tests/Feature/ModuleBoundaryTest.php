@@ -12,9 +12,7 @@ use Symfony\Component\Finder\Finder;
  *   guard was introduced. The list may only SHRINK: fix a file, delete its
  *   entry. Adding an entry needs an architectural decision, not a convenience.
  */
-const LEGACY_BASELINE = [
-    'app/Modules/Platform/Services/InventoryProductImportProcessor.php',
-];
+const LEGACY_BASELINE = [];
 
 describe('Module boundaries', function () {
     it('does not gain new cross-module model imports outside Models directories', function (): void {
