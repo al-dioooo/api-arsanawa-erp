@@ -3,14 +3,14 @@
 namespace App\Modules\Inventory\Actions;
 
 use App\Modules\Inventory\Models\StockLot;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListStockLots
 {
     /**
      * @param  array<string, mixed>  $params
      */
-    public function execute(int $companyId, array $params): Collection
+    public function execute(int $companyId, array $params): LengthAwarePaginator
     {
         $query = StockLot::query()
             ->where('company_id', $companyId)
@@ -35,6 +35,6 @@ class ListStockLots
 
         return $query->with(['productUnit.product', 'productUnit.variants.group'])
             ->orderBy('received_at')
-            ->get();
+            ->paginate((int) ($params['per_page'] ?? 50));
     }
 }

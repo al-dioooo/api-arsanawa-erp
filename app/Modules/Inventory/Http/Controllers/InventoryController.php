@@ -677,9 +677,18 @@ class InventoryController extends Controller
     public function stockLots(StockQueryRequest $request, ListStockLots $action): JsonResponse
     {
         $companyId = (int) $request->attributes->get('active_company_id');
+        $paginator = $action->execute($companyId, $request->validated());
 
         return $this->success(
-            ['lots' => StockLotResource::collection($action->execute($companyId, $request->validated()))],
+            [
+                'lots' => StockLotResource::collection($paginator->items()),
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
             __('Stock lots retrieved.'),
         );
     }
