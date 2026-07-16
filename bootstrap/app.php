@@ -15,6 +15,7 @@ use App\Providers\RateLimitServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
@@ -40,6 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Every API route inherits a ceiling by default; new route groups are
         // therefore fail-closed. Limiters live in RateLimitServiceProvider.
         $middleware->throttleApi('api');
+
+        // Secret settings treat null as "leave unchanged" so a client that reads
+        // settings back (where credentials are redacted to null) and saves them
+        // cannot wipe one. That makes an empty string the only way to explicitly
+        // clear a credential, so it must survive as an empty string here.
+        $middleware->convertEmptyStringsToNull(except: [
+            fn (Request $request): bool => $request->is('api/v1/platform/settings'),
+        ]);
 
         $middleware->alias([
             'external.api-key' => AuthenticateExternalApiKey::class,
