@@ -2,23 +2,20 @@
 
 namespace App\Modules\Platform\Services;
 
-use App\Modules\Inventory\Models\ProductVariant;
+use App\Modules\Inventory\Actions\FindVariantBySku;
 use App\Modules\Partners\Actions\FindOrCreateCustomer;
-use App\Modules\Pos\Events\SaleImported;
-use App\Modules\Pos\Models\Register;
-use App\Modules\Pos\Models\Sale;
-use App\Modules\Pos\Models\SaleLine;
-use App\Modules\Pos\Models\SalePayment;
-use App\Modules\Pos\Services\CheckoutService;
+use App\Modules\Pos\Actions\FindRegisterIdByCode;
+use App\Modules\Pos\Actions\ImportCateringSale;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class PosCateringImportProcessor
 {
     public function __construct(
-        private readonly CheckoutService $checkoutService,
         private readonly FindOrCreateCustomer $findOrCreateCustomer,
+        private readonly FindVariantBySku $variantBySku,
+        private readonly FindRegisterIdByCode $registerIdByCode,
+        private readonly ImportCateringSale $importCateringSale,
     ) {}
 
     /**
@@ -39,7 +36,7 @@ class PosCateringImportProcessor
             $errors['branch_code'][] = __('Branch code was not found.');
         }
 
-        if (($row['sku'] ?? '') !== '' && ! ProductVariant::query()->forCompany($companyId)->where('sku', $row['sku'])->exists()) {
+        if (($row['sku'] ?? '') !== '' && $this->variantBySku->execute($companyId, $row['sku']) === null) {
             $errors['sku'][] = __('SKU was not found.');
         }
 
@@ -54,7 +51,7 @@ class PosCateringImportProcessor
         if (($row['payment_method'] ?? '') !== '') {
             if (($row['import_register_code'] ?? '') === '') {
                 $errors['import_register_code'][] = __('Import register code is required for paid form orders.');
-            } elseif (! Register::query()->forCompany($companyId)->where('code', $row['import_register_code'])->exists()) {
+            } elseif ($this->registerIdByCode->execute($companyId, $row['import_register_code']) === null) {
                 $errors['import_register_code'][] = __('Import register was not found.');
             }
         }
@@ -86,10 +83,7 @@ class PosCateringImportProcessor
                     'phone' => $first['customer_phone'] ?: null,
                 ]);
                 $lines = $orderRows->map(function (array $row) use ($companyId): array {
-                    $variant = ProductVariant::query()
-                        ->forCompany($companyId)
-                        ->where('sku', $row['sku'])
-                        ->firstOrFail();
+                    $variant = $this->variantBySku->execute($companyId, $row['sku'], mustExist: true);
 
                     return [
                         'product_variant_id' => $variant->id,
@@ -99,87 +93,29 @@ class PosCateringImportProcessor
                         'discount' => $row['discount'] ?: 0,
                     ];
                 })->values()->all();
-                $orderDate = $first['order_date'] ?: now()->toDateString();
-                $calculations = $this->checkoutService->calculate($companyId, $lines, $orderDate);
-                $sourceChannel = ($first['source_channel'] ?? '') ?: 'spreadsheet';
                 $paymentMethod = ($first['payment_method'] ?? '') ?: null;
                 $registerId = $paymentMethod
-                    ? Register::query()
-                        ->forCompany($companyId)
-                        ->where('code', $first['import_register_code'] ?? '')
-                        ->value('id')
+                    ? $this->registerIdByCode->execute($companyId, $first['import_register_code'] ?? '')
                     : null;
-                $sale = Sale::query()
-                    ->forCompany($companyId)
-                    ->where('source', 'import')
-                    ->where('source_channel', $sourceChannel)
-                    ->where('external_reference', $orderReference)
-                    ->first();
-                $exists = $sale !== null;
 
-                if (! $sale) {
-                    $sale = new Sale([
-                        'company_id' => $companyId,
-                        'sale_number' => 'IMP-'.date('Ymd').'-'.strtoupper(Str::random(6)),
-                        'source' => 'import',
-                        'source_channel' => $sourceChannel,
-                        'external_reference' => $orderReference,
-                        'created_by' => $userId,
-                    ]);
-                }
-
-                $sale->fill([
+                $wasCreated = $this->importCateringSale->execute($companyId, $userId, [
+                    'external_reference' => $orderReference,
+                    'source_channel' => ($first['source_channel'] ?? '') ?: 'spreadsheet',
                     'branch_id' => $branchId,
                     'register_id' => $registerId,
-                    'cashier_shift_id' => null,
-                    'type' => 'catering',
                     'partner_id' => $customer['id'],
                     'customer_name' => $first['customer_name'],
-                    'status' => 'confirmed',
-                    'order_date' => $orderDate,
+                    'order_date' => $first['order_date'] ?: now()->toDateString(),
                     'fulfilment_date' => $first['fulfilment_date'],
                     'fulfilment_time_window' => ($first['fulfilment_time_window'] ?? '') ?: null,
                     'delivery_address' => $first['delivery_address'] ?: null,
-                    'currency_id' => 1,
-                    'exchange_rate' => 1,
-                    'subtotal' => $calculations['subtotal'],
-                    'discount_total' => $calculations['discount_total'],
-                    'tax_total' => $calculations['tax_total'],
-                    'total' => $calculations['total'],
-                    'amount_paid' => $paymentMethod ? $calculations['total'] : '0.0000',
                     'notes' => $first['notes'] ?: null,
-                    'updated_by' => $userId,
+                    'payment_method' => $paymentMethod,
+                    'payment_reference' => ($first['payment_reference'] ?? '') ?: null,
+                    'lines' => $lines,
                 ]);
-                $sale->save();
-                $sale->lines()->delete();
 
-                foreach ($calculations['lines'] as $line) {
-                    SaleLine::query()->create(array_merge($line, ['sale_id' => $sale->id]));
-                }
-
-                if ($sourceChannel === 'google_form') {
-                    $sale->payments()->delete();
-
-                    if ($paymentMethod) {
-                        SalePayment::query()->create([
-                            'sale_id' => $sale->id,
-                            'method' => $paymentMethod,
-                            'amount' => $calculations['total'],
-                            'reference' => ($first['payment_reference'] ?? '') ?: null,
-                            'paid_at' => $orderDate,
-                            'created_by' => $userId,
-                        ]);
-                    }
-                }
-
-                if ($exists) {
-                    $updated++;
-                } else {
-                    $created++;
-                    // Triggers a WhatsApp receipt; the listener defers the actual
-                    // send until this transaction commits.
-                    event(new SaleImported($sale->id));
-                }
+                $wasCreated ? $created++ : $updated++;
             }
         });
 
