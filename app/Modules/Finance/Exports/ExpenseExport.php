@@ -27,22 +27,32 @@ class ExpenseExport implements FromCollection, ShouldAutoSize, WithHeadings, Wit
 
     public function collection(): Collection
     {
+        // Stream lean rows (selected columns + joined partner name) so only
+        // the final 5-field arrays are ever held, not hydrated model graphs.
         return Payment::query()
-            ->forCompany($this->companyId)
-            ->where('payment_type', 'outbound')
-            ->where('status', 'posted')
-            ->when($this->from, fn ($q) => $q->whereDate('payment_date', '>=', $this->from))
-            ->when($this->to, fn ($q) => $q->whereDate('payment_date', '<=', $this->to))
-            ->with('partner')
-            ->orderBy('payment_date')
-            ->get()
+            ->where('payments.company_id', $this->companyId)
+            ->leftJoin('partners', 'partners.id', '=', 'payments.partner_id')
+            ->where('payments.payment_type', 'outbound')
+            ->where('payments.status', 'posted')
+            ->when($this->from, fn ($q) => $q->where('payments.payment_date', '>=', $this->from))
+            ->when($this->to, fn ($q) => $q->where('payments.payment_date', '<=', $this->to))
+            ->select([
+                'payments.payment_date',
+                'payments.payment_number',
+                'payments.payment_method',
+                'payments.amount',
+                'partners.name as partner_name',
+            ])
+            ->orderBy('payments.payment_date')
+            ->cursor()
             ->map(fn (Payment $p): array => [
                 'date' => optional($p->payment_date)->format('Y-m-d') ?? '',
                 'reference' => (string) $p->payment_number,
-                'supplier' => (string) ($p->partner?->name ?? ''),
+                'supplier' => (string) ($p->partner_name ?? ''),
                 'method' => (string) ($p->payment_method ?? ''),
                 'amount' => (float) $p->amount,
-            ]);
+            ])
+            ->collect();
     }
 
     /**
