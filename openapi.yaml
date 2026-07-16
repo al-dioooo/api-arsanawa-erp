@@ -2810,6 +2810,39 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /api/v1/inventory/prices/resolve:
+    get:
+      operationId: inventory_prices_resolve
+      tags:
+        - Inventory
+      summary: api.v1.inventory.prices.resolve
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: 'on'
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: 'Resolve prices effective on this date (defaults to today).'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
   /api/v1/inventory/product-units:
     get:
       operationId: inventory_product_units_index
