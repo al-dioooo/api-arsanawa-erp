@@ -167,13 +167,6 @@ describe('Organization API key management', function (): void {
 
         $this->withToken($ownerToken)
             ->withHeader('X-Company-Id', (string) $companyId)
-            ->getJson("/api/v1/organization/companies/{$companyId}/api-keys/{$apiKeyId}")
-            ->assertSuccessful()
-            ->assertJsonPath('data.api_key.id', $apiKeyId)
-            ->assertJsonMissing(['plain_text_key' => $plainTextKey]);
-
-        $this->withToken($ownerToken)
-            ->withHeader('X-Company-Id', (string) $companyId)
             ->postJson("/api/v1/organization/companies/{$companyId}/api-keys/{$apiKeyId}/revoke")
             ->assertSuccessful()
             ->assertJsonPath('data.api_key.id', $apiKeyId)

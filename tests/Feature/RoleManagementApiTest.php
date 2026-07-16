@@ -83,6 +83,26 @@ describe('Role management', function () {
             ->assertJsonFragment(['name' => 'Catering Supervisor']);
     });
 
+    it('shows a single role with its permissions', function (): void {
+        [, $token, $companyId] = roleOwner();
+
+        $roleId = $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson("/api/v1/organization/companies/{$companyId}/roles", [
+                'name' => 'Auditor',
+                'permissions' => ['identity.view'],
+            ])
+            ->json('data.role.id');
+
+        $this->withToken($token)
+            ->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/organization/companies/{$companyId}/roles/{$roleId}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.role.name', 'Auditor')
+            ->assertJsonPath('data.role.is_builtin', false)
+            ->assertJsonPath('data.role.permissions', ['identity.view']);
+    });
+
     it('updates a custom role', function (): void {
         [, $token, $companyId] = roleOwner();
 

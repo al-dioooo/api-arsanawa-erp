@@ -175,14 +175,6 @@ class InventoryController extends Controller
         );
     }
 
-    public function showCategory(ListCategoriesRequest $request, int $category): JsonResponse
-    {
-        return $this->success(
-            ['category' => new CategoryResource($this->resolveCategory($request, $category))],
-            __('Category retrieved.'),
-        );
-    }
-
     public function updateCategory(UpdateCategoryRequest $request, UpdateCategory $action, int $category): JsonResponse
     {
         $resolved = $this->resolveCategory($request, $category);
@@ -245,14 +237,6 @@ class InventoryController extends Controller
         );
     }
 
-    public function showBrand(ListBrandsRequest $request, int $brand): JsonResponse
-    {
-        return $this->success(
-            ['brand' => new BrandResource($this->resolveBrand($request, $brand))],
-            __('Brand retrieved.'),
-        );
-    }
-
     public function updateBrand(UpdateBrandRequest $request, UpdateBrand $action, int $brand): JsonResponse
     {
         $resolved = $this->resolveBrand($request, $brand);
@@ -292,14 +276,6 @@ class InventoryController extends Controller
             ['unit' => new UnitOfMeasureResource($unit)],
             __('Unit of measure created.'),
             201,
-        );
-    }
-
-    public function showUnit(ListUnitsOfMeasureRequest $request, int $unit): JsonResponse
-    {
-        return $this->success(
-            ['unit' => new UnitOfMeasureResource($this->resolveUnit($request, $unit))],
-            __('Unit of measure retrieved.'),
         );
     }
 
