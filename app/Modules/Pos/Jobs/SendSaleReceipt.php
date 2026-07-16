@@ -2,7 +2,6 @@
 
 namespace App\Modules\Pos\Jobs;
 
-use App\Modules\Platform\Models\WhatsAppMessage;
 use App\Modules\Platform\Services\WhatsApp\WhatsAppService;
 use App\Modules\Pos\Models\Sale;
 use App\Modules\Pos\Support\SaleReceiptMessage;
@@ -45,29 +44,19 @@ class SendSaleReceipt implements ShouldQueue
         }
 
         // Idempotency: never send a second receipt for the same sale.
-        $alreadySent = WhatsAppMessage::query()
-            ->where('related_type', $sale->getMorphClass())
-            ->where('related_id', $sale->getKey())
-            ->where('status', WhatsAppMessage::STATUS_SENT)
-            ->exists();
-
-        if ($alreadySent) {
+        if ($whatsApp->hasSentFor($sale)) {
             return;
         }
 
         $phone = $sale->recipientPhone();
 
         if ($phone === null) {
-            $skipped = new WhatsAppMessage([
-                'company_id' => $sale->company_id,
-                'to' => '',
-                'body' => '',
-                'status' => WhatsAppMessage::STATUS_SKIPPED,
-                'error' => 'No recipient phone number on the sale.',
-                'created_by' => $this->userId,
-            ]);
-            $skipped->related()->associate($sale);
-            $skipped->save();
+            $whatsApp->skip(
+                companyId: $sale->company_id,
+                reason: 'No recipient phone number on the sale.',
+                related: $sale,
+                userId: $this->userId,
+            );
 
             return;
         }
