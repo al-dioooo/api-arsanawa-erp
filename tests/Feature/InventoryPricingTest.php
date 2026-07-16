@@ -141,6 +141,103 @@ describe('Inventory pricing', function () {
         expect(collect($july)->firstWhere('product_variant_id', $variantA)['price'])->toBe('12000.0000');
     });
 
+    it('lists price rows for a price list', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Cocoa',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'PRC-3']],
+        ]);
+        $variantId = test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->json('data.product.variants.0.id');
+
+        $priceListId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/inventory/price-lists', ['name' => 'Retail'])
+            ->assertCreated()
+            ->json('data.price_list.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/price-lists/{$priceListId}/prices", [
+                'product_variant_id' => $variantId,
+                'price' => 25000,
+                'effective_from' => '2026-01-01',
+            ])->assertSuccessful();
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/price-lists/{$priceListId}/prices", [
+                'product_variant_id' => $variantId,
+                'price' => 30000,
+                'effective_from' => '2026-06-01',
+            ])->assertSuccessful();
+
+        // Newest effective_from first; dates serialized as plain YYYY-MM-DD.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/price-lists/{$priceListId}/prices")
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data.prices')
+            ->assertJsonPath('data.prices.0.price_list_id', $priceListId)
+            ->assertJsonPath('data.prices.0.product_variant_id', $variantId)
+            ->assertJsonPath('data.prices.0.price', '30000.0000')
+            ->assertJsonPath('data.prices.0.effective_from', '2026-06-01')
+            ->assertJsonPath('data.prices.1.price', '25000.0000')
+            ->assertJsonPath('data.prices.1.effective_from', '2026-01-01');
+    });
+
+    it('filters price rows by product variant', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Milk',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'PRC-4'], ['sku' => 'PRC-5']],
+        ]);
+        $variants = test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->json('data.product.variants');
+        $variantA = $variants[0]['id'];
+        $variantB = $variants[1]['id'];
+
+        $priceListId = $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->postJson('/api/v1/inventory/price-lists', ['name' => 'Retail'])
+            ->assertCreated()
+            ->json('data.price_list.id');
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/price-lists/{$priceListId}/prices", [
+                'product_variant_id' => $variantA,
+                'price' => 10000,
+                'effective_from' => '2026-01-01',
+            ])->assertSuccessful();
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->putJson("/api/v1/inventory/price-lists/{$priceListId}/prices", [
+                'product_variant_id' => $variantB,
+                'price' => 20000,
+                'effective_from' => '2026-01-01',
+            ])->assertSuccessful();
+
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/price-lists/{$priceListId}/prices?product_variant_id={$variantB}")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.prices')
+            ->assertJsonPath('data.prices.0.product_variant_id', $variantB)
+            ->assertJsonPath('data.prices.0.price', '20000.0000');
+    });
+
+    it('returns 404 when reading prices of another company\'s price list', function (): void {
+        [, $tokenA, $companyA] = inventoryActor();
+        [, $tokenB, $companyB] = inventoryActor();
+
+        $priceListId = $this->withToken($tokenA)->withHeader('X-Company-Id', (string) $companyA)
+            ->postJson('/api/v1/inventory/price-lists', ['name' => 'Retail'])
+            ->assertCreated()
+            ->json('data.price_list.id');
+
+        $this->withToken($tokenB)->withHeader('X-Company-Id', (string) $companyB)
+            ->getJson("/api/v1/inventory/price-lists/{$priceListId}/prices")
+            ->assertNotFound();
+    });
+
     it('lists price lists for the company', function (): void {
         [, $token, $companyId] = inventoryActor();
 

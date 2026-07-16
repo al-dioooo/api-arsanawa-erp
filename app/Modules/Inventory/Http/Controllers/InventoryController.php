@@ -81,6 +81,7 @@ use App\Modules\Inventory\Http\Requests\ListBrandsRequest;
 use App\Modules\Inventory\Http\Requests\ListCategoriesRequest;
 use App\Modules\Inventory\Http\Requests\ListDiscountsRequest;
 use App\Modules\Inventory\Http\Requests\ListGoodsReceiptsRequest;
+use App\Modules\Inventory\Http\Requests\ListPricesRequest;
 use App\Modules\Inventory\Http\Requests\ListProductsRequest;
 use App\Modules\Inventory\Http\Requests\ListProductUnitsRequest;
 use App\Modules\Inventory\Http\Requests\ListRewardsRequest;
@@ -112,6 +113,7 @@ use App\Modules\Inventory\Http\Resources\CategoryResource;
 use App\Modules\Inventory\Http\Resources\DiscountResource;
 use App\Modules\Inventory\Http\Resources\GoodsReceiptResource;
 use App\Modules\Inventory\Http\Resources\PriceListResource;
+use App\Modules\Inventory\Http\Resources\PriceResource;
 use App\Modules\Inventory\Http\Resources\ProductImageResource;
 use App\Modules\Inventory\Http\Resources\ProductResource;
 use App\Modules\Inventory\Http\Resources\ProductUnitResource;
@@ -810,6 +812,23 @@ class InventoryController extends Controller
             ['price_list' => new PriceListResource($priceList)],
             __('Price list created.'),
             201,
+        );
+    }
+
+    public function priceListPrices(ListPricesRequest $request, int $priceList): JsonResponse
+    {
+        $companyId = (int) $request->attributes->get('active_company_id');
+        $resolved = PriceList::where('company_id', $companyId)->findOrFail($priceList);
+
+        $rows = $resolved->prices()
+            ->when($request->validated('product_variant_id'), fn ($query, $variantId) => $query->where('product_variant_id', $variantId))
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->get();
+
+        return $this->success(
+            ['prices' => PriceResource::collection($rows)],
+            __('Prices retrieved.'),
         );
     }
 

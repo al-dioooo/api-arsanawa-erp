@@ -204,6 +204,7 @@ Route::middleware(['auth:api', 'organization.company-context'])
 
         Route::get('price-lists', [InventoryController::class, 'priceLists'])->name('price-lists.index');
         Route::post('price-lists', [InventoryController::class, 'storePriceList'])->name('price-lists.store');
+        Route::get('price-lists/{priceList}/prices', [InventoryController::class, 'priceListPrices'])->name('price-lists.prices.index');
         Route::put('price-lists/{priceList}/prices', [InventoryController::class, 'setPrice'])->name('price-lists.prices.set');
         Route::get('products/{product}/variants/{variant}/price', [InventoryController::class, 'resolvePrice'])->name('products.variants.price.resolve');
         Route::get('prices/resolve', [InventoryController::class, 'resolvePrices'])->name('prices.resolve');

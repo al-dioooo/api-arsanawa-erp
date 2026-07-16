@@ -2772,6 +2772,37 @@ paths:
               type: object
               additionalProperties: true
   '/api/v1/inventory/price-lists/{priceList}/prices':
+    get:
+      operationId: inventory_price_lists_prices_index
+      tags:
+        - Inventory
+      summary: api.v1.inventory.price-lists.prices.index
+      parameters:
+        -
+          $ref: '#/components/parameters/AcceptHeader'
+        -
+          $ref: '#/components/parameters/CompanyIdHeader'
+        -
+          name: priceList
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'Route model identifier.'
+      responses:
+        200:
+          $ref: '#/components/responses/Success'
+        401:
+          $ref: '#/components/responses/Unauthenticated'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/ValidationError'
+      security:
+        -
+          bearerAuth: {  }
     put:
       operationId: inventory_price_lists_prices_set
       tags:
