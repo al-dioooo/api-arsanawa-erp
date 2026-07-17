@@ -1,5 +1,8 @@
 <?php
 
+use App\Modules\Inventory\Models\StockLot;
+use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Services\StockService;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
@@ -146,6 +149,49 @@ describe('Inventory stock issues and adjustments', function () {
             'unit_cost' => '1000.0000',
             'status' => 'depleted',
         ]);
+    });
+
+    it('issues stock FIFO across more lots than one fetch chunk', function (): void {
+        [, $token, $companyId, $branchId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Bulk Beans',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'CHUNK-1']],
+        ]);
+        $variantId = test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/inventory/products/{$productId}")
+            ->json('data.product.variants.0.id');
+
+        $lotCount = StockService::LOT_CHUNK_SIZE + 2;
+        foreach (range(1, $lotCount) as $index) {
+            StockLot::create([
+                'company_id' => $companyId,
+                'branch_id' => $branchId,
+                'product_variant_id' => $variantId,
+                'received_quantity' => 1,
+                'remaining_quantity' => 1,
+                'unit_cost' => 1000,
+                'received_at' => '2026-01-01',
+                'status' => 'active',
+            ]);
+        }
+
+        app(StockService::class)->recordIssue([
+            'company_id' => $companyId,
+            'branch_id' => $branchId,
+            'product_variant_id' => $variantId,
+            'quantity' => $lotCount - 1,
+        ]);
+
+        expect(StockLot::query()
+            ->where('product_variant_id', $variantId)
+            ->where('status', 'active')
+            ->count())->toBe(1);
+        expect(StockMovement::query()
+            ->where('product_variant_id', $variantId)
+            ->where('type', 'issue')
+            ->count())->toBe($lotCount - 1);
     });
 
     it('rejects over-issue', function (): void {

@@ -3,8 +3,8 @@
 namespace App\Modules\Pos\Services;
 
 use App\Modules\Finance\Services\TaxCalculator;
+use App\Modules\Inventory\Actions\ListVariantSummaries;
 use App\Modules\Inventory\Actions\ResolvePrice;
-use App\Modules\Inventory\Models\ProductVariant;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutService
@@ -12,6 +12,7 @@ class CheckoutService
     public function __construct(
         private readonly ResolvePrice $resolvePrice,
         private readonly TaxCalculator $taxCalculator,
+        private readonly ListVariantSummaries $variantSummaries,
     ) {}
 
     /**
@@ -22,12 +23,16 @@ class CheckoutService
      */
     public function calculate(int $companyId, array $lines, ?string $on = null): array
     {
+        // Batch-load every referenced variant once instead of a query per line.
+        $variants = $this->variantSummaries->execute(
+            array_column($lines, 'product_variant_id'),
+            $companyId,
+        );
+
         $preparedLines = [];
 
         foreach ($lines as $line) {
-            $variant = ProductVariant::query()
-                ->forCompany($companyId)
-                ->find($line['product_variant_id']);
+            $variant = $variants->get($line['product_variant_id']);
 
             if (! $variant) {
                 throw ValidationException::withMessages([

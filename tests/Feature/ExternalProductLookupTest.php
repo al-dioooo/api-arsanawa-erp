@@ -2,7 +2,9 @@
 
 use App\Modules\Inventory\Models\Price;
 use App\Modules\Inventory\Models\PriceList;
+use App\Modules\Inventory\Models\Product;
 use App\Modules\Inventory\Models\ProductBranchAvailability;
+use App\Modules\Inventory\Models\ProductUnit;
 use App\Modules\Inventory\Models\ProductVariant;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -100,7 +102,46 @@ describe('External product lookup', function (): void {
             'price' => 999999,
         ]);
 
-        $this->withHeader('X-API-Key', $apiKey)
+        $visibleProduct = Product::query()->findOrFail(
+            ProductVariant::query()->whereKey($visibleVariantId)->value('product_id'),
+        );
+
+        $visibleProduct->images()->create([
+            'company_id' => $companyA,
+            'path' => 'products/nasi-box.jpg',
+            'url' => 'https://cdn.example.test/products/nasi-box.jpg',
+            'original_url' => 'https://cdn.example.test/products/nasi-box-original.jpg',
+            'alt_text' => 'Nasi Box Rendang',
+            'mime_type' => 'image/jpeg',
+            'size_bytes' => 2048,
+            'width' => 800,
+            'height' => 600,
+            'is_primary' => true,
+            'sort_order' => 1,
+        ]);
+
+        $productUnit = ProductUnit::query()->create([
+            'product_id' => $visibleProduct->id,
+            'company_id' => $companyA,
+            'sku' => 'EXT-NASI-BOX-UNIT',
+            'barcode' => '8990000000017',
+            'name' => 'Box of 1',
+            'is_active' => true,
+        ]);
+
+        $productUnit->images()->create([
+            'company_id' => $companyA,
+            'path' => 'units/nasi-box-unit.jpg',
+            'url' => 'https://cdn.example.test/units/nasi-box-unit.jpg',
+            'is_primary' => false,
+            'sort_order' => 2,
+        ]);
+
+        Price::query()
+            ->where('product_variant_id', $visibleVariantId)
+            ->update(['product_unit_id' => $productUnit->id]);
+
+        $response = $this->withHeader('X-API-Key', $apiKey)
             ->getJson("/api/v1/external/products?branch_id={$branchA}")
             ->assertSuccessful()
             ->assertJsonCount(1, 'data.products')
@@ -110,6 +151,27 @@ describe('External product lookup', function (): void {
             ->assertJsonMissing(['sku' => 'EXT-INACTIVE-PRODUCT'])
             ->assertJsonMissing(['sku' => 'EXT-UNAVAILABLE'])
             ->assertJsonMissing(['sku' => 'EXT-FOREIGN']);
+
+        $response
+            ->assertJsonPath('data.products.0.images.0.url', 'https://cdn.example.test/products/nasi-box.jpg')
+            ->assertJsonPath('data.products.0.images.0.is_primary', true)
+            ->assertJsonPath('data.products.0.variants.0.product_unit.id', $productUnit->id)
+            ->assertJsonPath('data.products.0.variants.0.product_unit.sku', 'EXT-NASI-BOX-UNIT')
+            ->assertJsonPath('data.products.0.variants.0.product_unit.images.0.url', 'https://cdn.example.test/units/nasi-box-unit.jpg');
+
+        // Guard the exact external payload shape (keys and their order) so the
+        // contract consumed by external clients cannot silently drift.
+        $imageKeys = ['id', 'url', 'original_url', 'alt_text', 'mime_type', 'size_bytes', 'width', 'height', 'is_primary', 'sort_order'];
+        $product = $response->json('data.products.0');
+
+        expect(array_keys($product))->toBe(['id', 'name', 'description', 'attributes', 'images', 'variants'])
+            ->and(array_keys($product['images'][0]))->toBe($imageKeys)
+            ->and(array_keys($product['variants'][0]))->toBe([
+                'id', 'product_id', 'sku', 'barcode', 'name', 'attributes',
+                'price', 'maximum_retail_price', 'currency_id', 'product_unit',
+            ])
+            ->and(array_keys($product['variants'][0]['product_unit']))->toBe(['id', 'sku', 'barcode', 'name', 'images'])
+            ->and(array_keys($product['variants'][0]['product_unit']['images'][0]))->toBe($imageKeys);
     });
 
     it('resolves variant price and rejects cross-company variants', function (): void {
@@ -129,11 +191,15 @@ describe('External product lookup', function (): void {
             'price' => 55000,
         ]);
 
-        $this->withHeader('X-API-Key', $apiKey)
+        $priceResponse = $this->withHeader('X-API-Key', $apiKey)
             ->getJson("/api/v1/external/products/{$variantA}/price?on=2026-05-29")
             ->assertSuccessful()
             ->assertJsonPath('data.product_variant_id', $variantA)
             ->assertJsonPath('data.price', '45000.0000');
+
+        // Guard the exact external price payload shape (keys and their order).
+        expect(array_keys($priceResponse->json('data')))
+            ->toBe(['product_variant_id', 'price', 'maximum_retail_price', 'currency_id']);
 
         $this->withHeader('X-API-Key', $apiKey)
             ->getJson("/api/v1/external/products/{$variantB}/price?on=2026-05-29")

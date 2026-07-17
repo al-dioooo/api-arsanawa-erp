@@ -5,35 +5,43 @@ namespace App\Modules\Finance\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Finance\Exports\ExpenseExport;
 use App\Modules\Finance\Exports\IncomeExport;
+use App\Modules\Finance\Exports\SpreadsheetExport;
 use App\Modules\Finance\Http\Requests\ExportFinanceRequest;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FinanceExportController extends Controller
 {
     /**
      * Stream the income export (posted inbound payments + completed POS sales).
      */
-    public function income(ExportFinanceRequest $request): BinaryFileResponse
+    public function income(ExportFinanceRequest $request): StreamedResponse
     {
         [$companyId, $from, $to] = $this->context($request);
 
-        return Excel::download(
-            new IncomeExport($companyId, $from, $to),
-            $this->filename('income'),
-        );
+        return $this->stream(new IncomeExport($companyId, $from, $to), 'income');
     }
 
     /**
      * Stream the expense export (posted outbound payments).
      */
-    public function expense(ExportFinanceRequest $request): BinaryFileResponse
+    public function expense(ExportFinanceRequest $request): StreamedResponse
     {
         [$companyId, $from, $to] = $this->context($request);
 
-        return Excel::download(
-            new ExpenseExport($companyId, $from, $to),
-            $this->filename('expense'),
+        return $this->stream(new ExpenseExport($companyId, $from, $to), 'expense');
+    }
+
+    private function stream(SpreadsheetExport $export, string $kind): StreamedResponse
+    {
+        $spreadsheet = $export->sheet();
+
+        return response()->streamDownload(
+            function () use ($spreadsheet): void {
+                (new Xlsx($spreadsheet))->save('php://output');
+            },
+            $this->filename($kind),
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
         );
     }
 

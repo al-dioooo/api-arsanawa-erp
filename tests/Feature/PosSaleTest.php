@@ -44,18 +44,6 @@ function posPricedVariant(string $token, int $companyId, string $sku, int $price
     return $variantId;
 }
 
-function posRegister(string $token, int $companyId, int $branchId): int
-{
-    return test()->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
-        ->postJson('/api/v1/pos/registers', [
-            'name' => 'POS Register '.uniqid(),
-            'code' => 'REG-'.uniqid(),
-            'branch_id' => $branchId,
-        ])
-        ->assertCreated()
-        ->json('data.register.id');
-}
-
 describe('POS sales', function () {
     it('creates a draft counter sale with resolved prices and calculated tax totals', function (): void {
         [, $token, $companyId, $branchId] = financeActor();

@@ -3,13 +3,10 @@
 namespace App\Modules\Pos\Actions;
 
 use App\Models\User;
-use App\Modules\Finance\Models\AccountingPeriod;
-use App\Modules\Finance\Models\AccountMapping;
-use App\Modules\Finance\Models\JournalEntry;
-use App\Modules\Finance\Models\JournalLine;
 use App\Modules\Finance\Services\PostingService;
-use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Actions\ListIssuedStock;
 use App\Modules\Inventory\Services\StockService;
+use App\Modules\Inventory\Support\IssuedStock;
 use App\Modules\Pos\Models\Sale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +16,7 @@ class CompleteSale
     public function __construct(
         private readonly StockService $stockService,
         private readonly PostingService $postingService,
+        private readonly ListIssuedStock $issuedStock,
     ) {}
 
     /**
@@ -46,7 +44,7 @@ class CompleteSale
 
         return DB::transaction(function () use ($sale, $user): Sale {
             $sale->load(['lines', 'register']);
-            $period = $this->periodFor($sale);
+            $periodId = $this->periodIdFor($sale);
 
             foreach ($sale->lines as $line) {
                 $this->stockService->recordIssue([
@@ -61,17 +59,21 @@ class CompleteSale
                 ]);
             }
 
-            $revenueEntry = $this->createRevenueEntry($sale, $period, $user);
-            $this->postingService->post($revenueEntry, $user);
+            $revenueEntryId = $this->postingService->recordPosted(
+                $this->revenueEntryData($sale, $periodId),
+                $user,
+            );
 
             $cogsAmount = $this->cogsAmount($sale);
-            $cogsEntry = $this->createCogsEntry($sale, $period, $user, $cogsAmount);
-            $this->postingService->post($cogsEntry, $user);
+            $cogsEntryId = $this->postingService->recordPosted(
+                $this->cogsEntryData($sale, $periodId, $cogsAmount),
+                $user,
+            );
 
             $sale->update([
                 'status' => 'completed',
-                'revenue_journal_entry_id' => $revenueEntry->id,
-                'cogs_journal_entry_id' => $cogsEntry->id,
+                'revenue_journal_entry_id' => $revenueEntryId,
+                'cogs_journal_entry_id' => $cogsEntryId,
                 'completed_at' => now(),
                 'updated_by' => $user->id,
             ]);
@@ -83,21 +85,17 @@ class CompleteSale
     /**
      * @throws ValidationException
      */
-    private function periodFor(Sale $sale): AccountingPeriod
+    private function periodIdFor(Sale $sale): int
     {
-        $period = AccountingPeriod::query()
-            ->forCompany($sale->company_id)
-            ->where('start_date', '<=', $sale->order_date)
-            ->where('end_date', '>=', $sale->order_date)
-            ->first();
+        $periodId = $this->postingService->findOpenPeriodId($sale->company_id, $sale->order_date);
 
-        if (! $period || $period->status !== 'open') {
+        if ($periodId === null) {
             throw ValidationException::withMessages([
                 'order_date' => [__('No open accounting period found for the sale date.')],
             ]);
         }
 
-        return $period;
+        return $periodId;
     }
 
     /**
@@ -105,24 +103,23 @@ class CompleteSale
      */
     private function mappedAccount(int $companyId, string $key): int
     {
-        $mapping = AccountMapping::query()
-            ->forCompany($companyId)
-            ->where('key', $key)
-            ->first();
+        $accountId = $this->postingService->findMappedAccountId($companyId, $key);
 
-        if (! $mapping) {
+        if ($accountId === null) {
             throw ValidationException::withMessages([
                 $key => [__('Account mapping :key is missing for this company.', ['key' => $key])],
             ]);
         }
 
-        return $mapping->account_id;
+        return $accountId;
     }
 
     /**
+     * @return array<string, mixed>
+     *
      * @throws ValidationException
      */
-    private function createRevenueEntry(Sale $sale, AccountingPeriod $period, User $user): JournalEntry
+    private function revenueEntryData(Sale $sale, int $periodId): array
     {
         $cashAmount = (string) $sale->amount_paid;
         $receivableAmount = bcsub((string) $sale->total, $cashAmount, 4);
@@ -135,124 +132,111 @@ class CompleteSale
             ]);
         }
 
-        $entry = JournalEntry::create([
-            'company_id' => $sale->company_id,
-            'branch_id' => $sale->branch_id,
-            'entry_number' => 'JE-POS-REV-'.$sale->sale_number,
-            'entry_date' => $sale->order_date,
-            'accounting_period_id' => $period->id,
-            'description' => 'System posted POS sale #'.$sale->sale_number,
-            'reference_type' => Sale::class,
-            'reference_id' => $sale->id,
-            'currency_id' => $sale->currency_id,
-            'exchange_rate' => $sale->exchange_rate,
-            'status' => 'draft',
-            'created_by' => $user->id,
-            'updated_by' => $user->id,
-        ]);
+        $lines = [];
 
         if (bccomp($cashAmount, '0.0000', 4) > 0) {
-            JournalLine::create([
-                'journal_entry_id' => $entry->id,
+            $lines[] = [
                 'account_id' => $cashAccountId,
                 'description' => 'Cash received for POS sale #'.$sale->sale_number,
                 'debit' => $cashAmount,
                 'credit' => 0,
                 'foreign_debit' => $cashAmount,
                 'foreign_credit' => 0,
-            ]);
+            ];
         }
 
         if (bccomp($receivableAmount, '0.0000', 4) > 0) {
-            $arAccountId = $this->mappedAccount($sale->company_id, 'accounts_receivable');
-            JournalLine::create([
-                'journal_entry_id' => $entry->id,
-                'account_id' => $arAccountId,
+            $lines[] = [
+                'account_id' => $this->mappedAccount($sale->company_id, 'accounts_receivable'),
                 'description' => 'Receivable for POS sale #'.$sale->sale_number,
                 'debit' => $receivableAmount,
                 'credit' => 0,
                 'foreign_debit' => $receivableAmount,
                 'foreign_credit' => 0,
-            ]);
+            ];
         }
 
-        JournalLine::create([
-            'journal_entry_id' => $entry->id,
+        $lines[] = [
             'account_id' => $this->mappedAccount($sale->company_id, 'sales_revenue'),
             'description' => 'Revenue for POS sale #'.$sale->sale_number,
             'debit' => 0,
             'credit' => $revenueAmount,
             'foreign_debit' => 0,
             'foreign_credit' => $revenueAmount,
-        ]);
+        ];
 
         if (bccomp((string) $sale->tax_total, '0.0000', 4) > 0) {
-            JournalLine::create([
-                'journal_entry_id' => $entry->id,
+            $lines[] = [
                 'account_id' => $this->mappedAccount($sale->company_id, 'vat_output'),
                 'description' => 'VAT Output for POS sale #'.$sale->sale_number,
                 'debit' => 0,
                 'credit' => $sale->tax_total,
                 'foreign_debit' => 0,
                 'foreign_credit' => $sale->tax_total,
-            ]);
+            ];
         }
 
-        return $entry;
+        return [
+            'company_id' => $sale->company_id,
+            'branch_id' => $sale->branch_id,
+            'entry_number' => 'JE-POS-REV-'.$sale->sale_number,
+            'entry_date' => $sale->order_date,
+            'accounting_period_id' => $periodId,
+            'description' => 'System posted POS sale #'.$sale->sale_number,
+            'reference_type' => Sale::class,
+            'reference_id' => $sale->id,
+            'currency_id' => $sale->currency_id,
+            'exchange_rate' => $sale->exchange_rate,
+            'lines' => $lines,
+        ];
     }
 
     private function cogsAmount(Sale $sale): string
     {
-        return StockMovement::query()
-            ->where('reference_type', Sale::class)
-            ->where('reference_id', $sale->id)
-            ->where('type', 'issue')
-            ->get()
-            ->reduce(static function (string $carry, StockMovement $movement): string {
-                $quantity = ltrim((string) $movement->quantity, '-');
+        return $this->issuedStock->execute(Sale::class, $sale->id)
+            ->reduce(static function (string $carry, IssuedStock $movement): string {
+                $quantity = ltrim($movement->quantity, '-');
 
-                return bcadd($carry, bcmul($quantity, (string) $movement->unit_cost, 4), 4);
+                return bcadd($carry, bcmul($quantity, $movement->unitCost, 4), 4);
             }, '0.0000');
     }
 
-    private function createCogsEntry(Sale $sale, AccountingPeriod $period, User $user, string $cogsAmount): JournalEntry
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws ValidationException
+     */
+    private function cogsEntryData(Sale $sale, int $periodId, string $cogsAmount): array
     {
-        $entry = JournalEntry::create([
+        return [
             'company_id' => $sale->company_id,
             'branch_id' => $sale->branch_id,
             'entry_number' => 'JE-POS-COGS-'.$sale->sale_number,
             'entry_date' => $sale->order_date,
-            'accounting_period_id' => $period->id,
+            'accounting_period_id' => $periodId,
             'description' => 'System posted COGS for POS sale #'.$sale->sale_number,
             'reference_type' => Sale::class,
             'reference_id' => $sale->id,
             'currency_id' => $sale->currency_id,
             'exchange_rate' => $sale->exchange_rate,
-            'status' => 'draft',
-            'created_by' => $user->id,
-            'updated_by' => $user->id,
-        ]);
-
-        JournalLine::create([
-            'journal_entry_id' => $entry->id,
-            'account_id' => $this->mappedAccount($sale->company_id, 'cogs'),
-            'description' => 'COGS for POS sale #'.$sale->sale_number,
-            'debit' => $cogsAmount,
-            'credit' => 0,
-            'foreign_debit' => $cogsAmount,
-            'foreign_credit' => 0,
-        ]);
-
-        JournalLine::create([
-            'journal_entry_id' => $entry->id,
-            'account_id' => $this->mappedAccount($sale->company_id, 'inventory_asset'),
-            'description' => 'Inventory relieved for POS sale #'.$sale->sale_number,
-            'debit' => 0,
-            'credit' => $cogsAmount,
-            'foreign_debit' => 0,
-            'foreign_credit' => $cogsAmount,
-        ]);
-
-        return $entry;
+            'lines' => [
+                [
+                    'account_id' => $this->mappedAccount($sale->company_id, 'cogs'),
+                    'description' => 'COGS for POS sale #'.$sale->sale_number,
+                    'debit' => $cogsAmount,
+                    'credit' => 0,
+                    'foreign_debit' => $cogsAmount,
+                    'foreign_credit' => 0,
+                ],
+                [
+                    'account_id' => $this->mappedAccount($sale->company_id, 'inventory_asset'),
+                    'description' => 'Inventory relieved for POS sale #'.$sale->sale_number,
+                    'debit' => 0,
+                    'credit' => $cogsAmount,
+                    'foreign_debit' => 0,
+                    'foreign_credit' => $cogsAmount,
+                ],
+            ],
+        ];
     }
 }

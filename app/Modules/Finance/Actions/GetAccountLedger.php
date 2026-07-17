@@ -28,6 +28,12 @@ class GetAccountLedger
     {
         $account = Account::query()->forCompany($companyId)->findOrFail($accountId);
 
+        // Running balance is computed in SQL so PHP never has to accumulate
+        // over the whole period, and rows stream via cursor().
+        $signedAmount = $account->normal_balance === 'debit'
+            ? '(jl.debit - jl.credit)'
+            : '(jl.credit - jl.debit)';
+
         $lines = DB::table('journal_lines as jl')
             ->join('journal_entries as je', 'je.id', '=', 'jl.journal_entry_id')
             ->where('jl.account_id', $accountId)
@@ -44,34 +50,23 @@ class GetAccountLedger
                 'jl.debit',
                 'jl.credit',
             ])
+            ->selectRaw("SUM({$signedAmount}) OVER (ORDER BY je.entry_date, je.id, jl.id) as running_balance")
             ->orderBy('je.entry_date')
             ->orderBy('je.id')
             ->orderBy('jl.id')
-            ->get();
-
-        $balance = 0.0;
-        $normal = $account->normal_balance; // 'debit' or 'credit'
+            ->cursor();
 
         $ledger = [];
         foreach ($lines as $line) {
-            $debit = (float) $line->debit;
-            $credit = (float) $line->credit;
-
-            if ($normal === 'debit') {
-                $balance += $debit - $credit;
-            } else {
-                $balance += $credit - $debit;
-            }
-
             $ledger[] = [
                 'id' => (int) $line->id,
                 'journal_entry_id' => (int) $line->journal_entry_id,
                 'entry_number' => $line->entry_number,
                 'entry_date' => $line->entry_date,
                 'description' => $line->line_description ?: $line->entry_description,
-                'debit' => $debit,
-                'credit' => $credit,
-                'balance' => $balance,
+                'debit' => (float) $line->debit,
+                'credit' => (float) $line->credit,
+                'balance' => (float) $line->running_balance,
             ];
         }
 

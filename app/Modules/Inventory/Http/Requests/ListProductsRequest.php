@@ -24,6 +24,7 @@ class ListProductsRequest extends FormRequest
             'brand_id' => ['sometimes', 'integer'],
             'status' => ['sometimes', 'string'],
             'search' => ['sometimes', 'string', 'max:255'],
+            'include' => ['sometimes', 'string', 'in:product_units'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ];
     }

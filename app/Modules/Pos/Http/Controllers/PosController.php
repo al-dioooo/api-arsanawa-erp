@@ -99,7 +99,7 @@ class PosController extends Controller
     public function showSale(ListSalesRequest $request, int $sale): JsonResponse
     {
         return $this->success(
-            ['sale' => new SaleResource($this->resolveSale($request, $sale)->load(['lines', 'payments', 'register']))],
+            ['sale' => new SaleResource($this->resolveSale($request, $sale)->load(['lines', 'payments', 'register', 'promotions']))],
             __('Sale retrieved.'),
         );
     }

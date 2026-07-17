@@ -3,7 +3,7 @@
 namespace App\Modules\Platform\Services;
 
 use App\Models\User;
-use App\Modules\Organization\Models\Company;
+use App\Modules\Organization\Actions\GetCompanyProfile;
 use App\Modules\Platform\Jobs\CommitSpreadsheetImport;
 use App\Modules\Platform\Models\ImportBatch;
 use App\Modules\Platform\Models\ImportRow;
@@ -34,6 +34,7 @@ class SpreadsheetImportService
     public function __construct(
         private readonly SettingsManager $settings,
         private readonly SupabaseStorage $supabaseStorage,
+        private readonly GetCompanyProfile $companyProfile,
     ) {}
 
     /**
@@ -141,7 +142,7 @@ class SpreadsheetImportService
 
     public function previewConfiguredPosCateringImport(int $companyId, User $user): ImportBatch
     {
-        $company = Company::query()->findOrFail($companyId);
+        $company = $this->companyProfile->execute($companyId, mustExist: true);
 
         if ($company->slug !== 'sekalori') {
             abort(403, __('Configured catering form imports are only available for SEKALORI.'));
@@ -658,7 +659,7 @@ class SpreadsheetImportService
 
     private function companyIsSekalori(int $companyId): bool
     {
-        return Company::query()->whereKey($companyId)->where('slug', 'sekalori')->exists();
+        return $this->companyProfile->execute($companyId)?->slug === 'sekalori';
     }
 
     /**

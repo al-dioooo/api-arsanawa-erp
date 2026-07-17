@@ -75,6 +75,13 @@ describe('POS promotions', function () {
             ->assertJsonPath('data.sale.total', '90000.0000')
             ->assertJsonCount(1, 'data.sale.promotions')
             ->assertJsonPath('data.sale.promotions.0.amount', '10000.0000');
+
+        // The sale detail must carry applied promotions so the UI panel renders.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson("/api/v1/pos/sales/{$saleId}")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data.sale.promotions')
+            ->assertJsonPath('data.sale.promotions.0.amount', '10000.0000');
     });
 
     it('adds giveaway lines only when the buy threshold is met', function (): void {

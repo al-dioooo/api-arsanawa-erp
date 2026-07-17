@@ -95,6 +95,29 @@ describe('Inventory products', function () {
             ->assertJsonCount(1, 'data.products');
     });
 
+    it('embeds product units in the list only when included', function (): void {
+        [, $token, $companyId] = inventoryActor();
+        $uom = createUnit($token, $companyId, 'pcs');
+        $productId = createProduct($token, $companyId, [
+            'name' => 'Kopi Susu',
+            'base_uom_id' => $uom,
+            'variants' => [['sku' => 'KS-1']],
+        ]);
+        createProductUnit($token, $companyId, $productId, 'SKL-KS-CUP');
+
+        // Default list stays lean: no product_units payload.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/inventory/products')
+            ->assertSuccessful()
+            ->assertJsonMissingPath('data.products.0.product_units');
+
+        // Opt in via include to get the nested product unit tree.
+        $this->withToken($token)->withHeader('X-Company-Id', (string) $companyId)
+            ->getJson('/api/v1/inventory/products?include=product_units')
+            ->assertSuccessful()
+            ->assertJsonPath('data.products.0.product_units.0.sku', 'SKL-KS-CUP');
+    });
+
     it('shows, updates and deletes a product (cascading variants)', function (): void {
         [, $token, $companyId] = inventoryActor();
         $uom = createUnit($token, $companyId, 'pcs');

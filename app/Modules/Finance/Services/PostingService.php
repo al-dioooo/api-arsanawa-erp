@@ -3,13 +3,111 @@
 namespace App\Modules\Finance\Services;
 
 use App\Models\User;
+use App\Modules\Finance\Models\AccountingPeriod;
+use App\Modules\Finance\Models\AccountMapping;
 use App\Modules\Finance\Models\JournalEntry;
 use App\Modules\Finance\Models\JournalLine;
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PostingService
 {
+    /**
+     * The id of the open accounting period covering a date.
+     *
+     * Null when no period covers the date, or the one that does is not open —
+     * callers decide how to word that failure for their own document.
+     */
+    public function findOpenPeriodId(int $companyId, DateTimeInterface|string $date): ?int
+    {
+        $period = AccountingPeriod::query()
+            ->forCompany($companyId)
+            ->where('start_date', '<=', $date)
+            ->where('end_date', '>=', $date)
+            ->first();
+
+        return $period && $period->status === 'open' ? $period->id : null;
+    }
+
+    /**
+     * The account a company maps a well-known key to, or null when unmapped.
+     */
+    public function findMappedAccountId(int $companyId, string $key): ?int
+    {
+        return AccountMapping::query()
+            ->forCompany($companyId)
+            ->where('key', $key)
+            ->value('account_id');
+    }
+
+    /**
+     * Record a journal entry for a system-generated document and post it.
+     *
+     * For callers that own their entry number and reference (a POS sale, say),
+     * unlike the user-facing CreateJournalEntry action which allocates both.
+     *
+     * @param  array{
+     *     company_id: int,
+     *     branch_id?: int|null,
+     *     entry_number: string,
+     *     entry_date: mixed,
+     *     accounting_period_id: int,
+     *     description: string,
+     *     reference_type?: string|null,
+     *     reference_id?: int|null,
+     *     currency_id: int|null,
+     *     exchange_rate: mixed,
+     *     lines: array<array{
+     *         account_id: int,
+     *         description?: string|null,
+     *         debit: mixed,
+     *         credit: mixed,
+     *         foreign_debit?: mixed,
+     *         foreign_credit?: mixed
+     *     }>
+     * }  $data
+     * @return int The posted entry id.
+     *
+     * @throws ValidationException
+     */
+    public function recordPosted(array $data, User $user): int
+    {
+        return DB::transaction(function () use ($data, $user): int {
+            $entry = JournalEntry::create([
+                'company_id' => $data['company_id'],
+                'branch_id' => $data['branch_id'] ?? null,
+                'entry_number' => $data['entry_number'],
+                'entry_date' => $data['entry_date'],
+                'accounting_period_id' => $data['accounting_period_id'],
+                'description' => $data['description'],
+                'reference_type' => $data['reference_type'] ?? null,
+                'reference_id' => $data['reference_id'] ?? null,
+                'currency_id' => $data['currency_id'],
+                'exchange_rate' => $data['exchange_rate'],
+                'status' => 'draft',
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            foreach ($data['lines'] as $line) {
+                JournalLine::create([
+                    'journal_entry_id' => $entry->id,
+                    'account_id' => $line['account_id'],
+                    'description' => $line['description'] ?? null,
+                    'debit' => $line['debit'],
+                    'credit' => $line['credit'],
+                    'foreign_debit' => $line['foreign_debit'] ?? $line['debit'],
+                    'foreign_credit' => $line['foreign_credit'] ?? $line['credit'],
+                ]);
+            }
+
+            $this->post($entry, $user);
+
+            return $entry->id;
+        });
+    }
+
     /**
      * Post a journal entry.
      *

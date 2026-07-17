@@ -19,6 +19,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate Limiter Store
+    |--------------------------------------------------------------------------
+    |
+    | Store backing the API rate limiters. "file" avoids 2-4 Postgres round
+    | trips per authenticated request on the single VPS. Tradeoff: FileStore's
+    | increment() is an unlocked read-modify-write, so concurrent PHP-FPM
+    | workers can lose counts and the effective ceiling leaks upward. That is
+    | acceptable for a coarse abuse ceiling. If exact counting ever matters,
+    | move to Redis (atomic INCR) — not database.
+    |
+    */
+
+    'limiter' => env('CACHE_LIMITER_STORE', 'file'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache Stores
     |--------------------------------------------------------------------------
     |

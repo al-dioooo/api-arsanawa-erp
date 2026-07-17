@@ -200,16 +200,6 @@ class OrganizationController extends Controller
         );
     }
 
-    public function showApiKey(ManageExternalApiKeysRequest $request, Company $company, int $apiKey): JsonResponse
-    {
-        $resolved = $this->resolveApiKey($company, $apiKey);
-
-        return $this->success(
-            ['api_key' => new ExternalApiKeyResource($resolved)],
-            __('API key retrieved.'),
-        );
-    }
-
     public function rotateApiKey(
         ManageExternalApiKeysRequest $request,
         RotateExternalApiKey $action,

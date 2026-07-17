@@ -77,6 +77,47 @@ class WhatsAppService
     }
 
     /**
+     * Whether a message was already sent for the given related record.
+     *
+     * Callers outside Platform use this to stay idempotent without reaching
+     * for the {@see WhatsAppMessage} log themselves.
+     */
+    public function hasSentFor(Model $related): bool
+    {
+        return WhatsAppMessage::query()
+            ->where('related_type', $related->getMorphClass())
+            ->where('related_id', $related->getKey())
+            ->where('status', WhatsAppMessage::STATUS_SENT)
+            ->exists();
+    }
+
+    /**
+     * Record a "skipped" attempt without contacting the gateway.
+     *
+     * For callers that decide not to send at all (no recipient, for example);
+     * the disabled-company case is handled inside {@see send()}.
+     */
+    public function skip(int $companyId, string $reason, ?Model $related = null, ?int $userId = null): WhatsAppMessage
+    {
+        $message = new WhatsAppMessage([
+            'company_id' => $companyId,
+            'to' => '',
+            'body' => '',
+            'status' => WhatsAppMessage::STATUS_SKIPPED,
+            'error' => $reason,
+            'created_by' => $userId,
+        ]);
+
+        if ($related !== null) {
+            $message->related()->associate($related);
+        }
+
+        $message->save();
+
+        return $message;
+    }
+
+    /**
      * Send a message and record the outcome.
      *
      * Always returns a persisted {@see WhatsAppMessage}. When sending is

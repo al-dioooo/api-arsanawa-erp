@@ -5,6 +5,7 @@ namespace App\Modules\Inventory\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductVariant extends Model
 {
@@ -42,6 +43,11 @@ class ProductVariant extends Model
     public function purchaseUom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'purchase_uom_id');
+    }
+
+    public function availabilities(): HasMany
+    {
+        return $this->hasMany(ProductBranchAvailability::class, 'product_variant_id');
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder

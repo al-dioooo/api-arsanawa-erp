@@ -2,7 +2,7 @@
 
 namespace App\Modules\Pos\Support;
 
-use App\Modules\Organization\Models\Company;
+use App\Modules\Organization\Actions\GetCompanyProfile;
 use App\Modules\Platform\Services\SettingsManager;
 use App\Modules\Platform\Services\WhatsApp\WhatsAppService;
 use App\Modules\Pos\Models\Sale;
@@ -20,7 +20,10 @@ class SaleReceiptMessage
         .'Pesanan {sale_number} senilai {total} tertanggal {date} telah kami terima. '
         .'Sampai jumpa!';
 
-    public function __construct(private readonly SettingsManager $settings) {}
+    public function __construct(
+        private readonly SettingsManager $settings,
+        private readonly GetCompanyProfile $companyProfile,
+    ) {}
 
     public function build(Sale $sale): string
     {
@@ -51,6 +54,6 @@ class SaleReceiptMessage
 
     private function companyName(int $companyId): string
     {
-        return (string) (Company::query()->whereKey($companyId)->value('name') ?? '');
+        return $this->companyProfile->execute($companyId)?->name ?? '';
     }
 }
